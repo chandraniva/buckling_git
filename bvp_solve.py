@@ -2,12 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.integrate as intg
 
-nodes = 5000
+nodes = 10000
 sigma = np.linspace(0,1,nodes)
 
 #parameters
 E = 15
-D = 0.1
+D = 0.005
 
 
 def func(sigma,y):
@@ -44,11 +44,55 @@ def lag(sig,dpsi):
     return lamb + 1/lamb + dpsi[int(sig*nodes)]**2/8/lamb/E**2
 
 def L(dpsi):
-    return intg.quad(lag,0,1,args=(dpsi))[0]
+    # return intg.quad(lag,0,1,args=(dpsi),limit=100000,epsrel=1e-15)[0]
+    return intg.quad(lag,0,1,args=(dpsi),limit=100000,epsrel=1e-15)[0]
+ 
+def get_min(a,b,tol,max_iter=1000):
+    
+    for _ in range(max_iter):
+
+        m = (a+b)/2
+        a1 = (m+a)/2
+        b1 = (m+b)/2
+        
+        Ls = np.array([L(a),L(a1),L(m),L(b1),L(b)])
+        idx = np.where(np.min(Ls)==Ls)[0][0] 
+        mi =  a + idx/4 * (b-a)
+        
+        if abs(b-a)<tol:
+            return mi
+        if idx == 0:
+            b = a1
+        elif idx==1:
+            b = m
+        elif idx == 2:
+            a = a1
+            b = b1
+        elif idx == 3:
+            a = m
+        elif idx == 4:
+            a = b1
+            
+    return mi
+
+
+
+# global lamb
+
+# l1, l2 = 1, 1.05
+
+
+# lamb = l1 
+# dpsi , mu = solve()
+# get_min(l1,l2,1e-6)
+    
+    
+# print("Optimal mu for minimum L = ",mu_opt)
+# print("Optimal lambda for minimum L = ",lm_opt)
 
 
 global lamb
-lms = np.linspace(1,1.03,100)
+lms = np.linspace(1,1.01,100)
 Ls = np.zeros_like(lms)
 mus = np.zeros_like(lms)
 
@@ -66,3 +110,6 @@ mu_opt = mus[idx]
     
 print("Optimal mu for minimum L = ",mu_opt)
 print("Optimal lambda for minimum L = ",lm_opt)
+
+plt.plot(lms,Ls)
+plt.ylim(2,2.001)

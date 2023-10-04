@@ -1,33 +1,39 @@
 import numpy as np
 
 def L(x):
-    return x**2 
+    return x**4-x**2 
 
-def get_min(a,b,tol):
+def get_min(a,b,tol,max_iter=1000):
     
-    m = (a+b)/2
-    a1 = (m+a)/2
-    b1 = (m+b)/2
-    
-    m0 = m + 2*tol  
-    
-    while np.abs(m-m0)>tol:
+    for _ in range(max_iter):
+
+        m = (a+b)/2
+        a1 = (m+a)/2
+        b1 = (m+b)/2
         
-        m0 = m
+        Ls = np.array([L(a),L(a1),L(m),L(b1),L(b)])
+        idx = np.where(np.min(Ls)==Ls)[0][0] 
+        mi =  a + idx/4 * (b-a)
         
-        if L(a1)<L(a) and L(a1)<L(m):
+        if abs(b-a)<tol:
+            return mi
+        if idx == 0:
+            b = a1
+        elif idx==1:
             b = m
-            m = get_min(a,b,tol)
-        elif L(b1)<L(b) and L(b1)<L(m):
+        elif idx == 2:
+            a = a1
+            b = b1
+        elif idx == 3:
             a = m
-            m = get_min(a,b,tol)
-        elif L(m)<L(a1) and L(m)<L(b1):
-            m = get_min(a1,b1,tol)
+        elif idx == 4:
+            a = b1
             
-    return m
-            
+    return mi
         
-res = get_min(-2,3,0.01)
+            
+ 
+res = get_min(0,3,0.0001)
 print(res)
     
     
