@@ -2,12 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.integrate as intg
 import scipy.optimize as opt
+from datetime import datetime
+from scipy import interpolate
+
+startTime = datetime.now()
 
 nodes = 1000
 sigma = np.linspace(0,1,nodes)
 
 #parameters
 E = 15
+l0 = np.sqrt(20)
     
 def solve(lamb):
     
@@ -67,7 +72,8 @@ def get_min(a,b,tol,max_iter=1000):
         
         if abs(b-a)<tol:
             dpsi_min, mu_min = solve(lm_min)
-            return lm_min, mu_min
+            return [lm_min, mu_min, dpsi_min]
+        
         if idx == 0:
             b = a1
         elif idx==1:
@@ -81,7 +87,7 @@ def get_min(a,b,tol,max_iter=1000):
             a = b1
     
     dpsi_min, mu_min = solve(lm_min)
-    return lm_min, mu_min
+    return [lm_min, mu_min, dpsi_min]
 
 
 global D
@@ -91,23 +97,54 @@ l1, l2 = 1, 1.03
 Ds = np.linspace(0,0.1,100)
 mus_opt = np.zeros_like(Ds)
 lms_opt = np.zeros_like(Ds)
+x_plus_dot = np.zeros_like(Ds)
 
 
 i=0
 for D in Ds:   
     print(D)
-    lms_opt[i], mus_opt[i] = get_min(l1,l2,1e-8)
+    lms_opt[i], mus_opt[i], dpsi_opt = get_min(l1,l2,1e-8)
+    p0 = dpsi_opt[0]
+    f0 = 1 + p0**2/24/l0**2
+    x_plus_dot[i] = E* f0/lms_opt[i]/l0-lms_opt[i]/2*l0*p0*np.cos(p0/2/l0) 
     i += 1
+
+
+f = interpolate.UnivariateSpline(Ds, x_plus_dot, s=0)
+yToFind = 0
+yreduced = np.array(x_plus_dot) - yToFind
+freduced = interpolate.UnivariateSpline(Ds, yreduced, s=0)
+D_trg = freduced.roots()[0]
+
+
+
 
 
 plt.plot(Ds,lms_opt,'o-')
 plt.xlabel("D")
-plt.ylabel("lambda")
-plt.savefig("lambda.png",dpi=500)
+plt.ylabel(r"$\Lambda$")
+# plt.savefig("lambda.png",dpi=500)
 plt.show()
 
 plt.plot(Ds,mus_opt,'o-')
 plt.xlabel("D")
-plt.ylabel("mu")
-plt.savefig("mu.png",dpi=500)
+plt.ylabel(r"$\mu$")
+# plt.savefig("mu.png",dpi=500)
 plt.show()
+
+plt.plot(Ds,x_plus_dot,'.-')
+plt.axvline(x=D_trg,linestyle='--',c='red',linewidth=3)
+plt.xlabel("D")
+plt.ylabel(r"$\dot{x}_+$")
+plt.savefig("x_plus_dot.png",dpi=500)
+plt.show()
+
+
+
+
+
+
+
+
+
+print("Execution time:",datetime.now() - startTime)
