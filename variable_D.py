@@ -111,3 +111,9 @@ plt.xlabel("D")
 plt.ylabel("mu")
 plt.savefig("mu.png",dpi=500)
 plt.show()
+
+
+
+
+
+ 
