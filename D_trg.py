@@ -9,7 +9,9 @@ startTime = datetime.now()
 
 nodes = 1000
 sigma = np.linspace(0,1,nodes)
-sigma2 = np.linspace(0,1/2,nodes)
+
+nodes2 = 1000
+sigma2 = np.linspace(0,1/2,nodes2)
 
 #parameters
 E = 15
@@ -159,12 +161,16 @@ def solve2(lamb):
 
         dpsi1 = yb[1]
         I1 = yb[2]
+        s_star1 = yb[4]
         
         return np.array([psi0-psi_max*s_star0, dpsi0 - psi_max, I0, dpsi1,
-        I1 - lamb*(1-D)/2 - (1+psi_max**2/8/E**2)*np.sin(psi_max*s_star0)/psi_max])
+        I1 - lamb*(1-D)/2 + (1+psi_max**2/8/E**2)*np.sin(psi_max*s_star0)/psi_max])
 
-    
+    # if D == D_trg:
+    # D0 = 0.01
     eps = np.sqrt(1 - lamb*(1-D))
+    # eps = eps0*(D-D0)
+    
     psi_init = eps*2/(1-np.pi**2/4/E**2)* np.sin(np.pi*sigma2)
     dpsi_init = eps*2/(1-np.pi**2/4/E**2)* np.cos(np.pi*sigma2) * np.pi
     
@@ -174,6 +180,14 @@ def solve2(lamb):
     y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
     y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
     y_init[4] = np.zeros_like(sigma2)
+        
+    # else:
+    #     y_init = np.zeros((5,sigma2.size))
+    #     y_init[0] = np.load("data/psi_init.npy")
+    #     y_init[1] = np.load("data/dpsi_init.npy")
+    #     y_init[2] = np.load("data/I_init.npy")
+    #     y_init[3] = np.load("data/mu_init.npy")
+    #     y_init[4] = np.load("data/s_star_init.npy")
     
     sol = intg.solve_bvp(func2,bc2,sigma2,y_init)
     psi = sol.y[0]
@@ -182,8 +196,17 @@ def solve2(lamb):
     mu = sol.y[3]
     s_star = sol.y[4]
     
+    # np.save("data/psi_init.npy",psi)
+    # np.save("data/dpsi_init.npy",dpsi)
+    # np.save("data/I_init.npy",I)
+    # np.save("data/mu_init.npy",mu)
+    # np.save("data/s_star_init.npy",s_star)
+    
     return [dpsi, np.mean(mu), np.mean(s_star)]
 
+
+def lag2(sig,dpsi,lamb):
+    return lamb + 1/lamb + dpsi[int(sig*nodes2)]**2/8/lamb/E**2
 
 
 def L2(dpsi,lamb,s_star):
@@ -192,8 +215,8 @@ def L2(dpsi,lamb,s_star):
                       1/lamb])
     psi_max = roots[-1]
     
-    return 2*s_star*(lamb+1/lamb+psi_max**2/8/lamb/E**2) + (1-2*s_star)* \
-    2*intg.quad(lag,s_star,1/2,args=(dpsi,lamb),limit=5000,epsrel=1e-10)[0]
+    return 2*s_star*(lamb+1/lamb+psi_max**2/8/lamb/E**2) + \
+    2*intg.quad(lag2,s_star,1/2,args=(dpsi,lamb),limit=100000,epsrel=1e-8)[0]
  
     
 def get_min2(a,b,tol,max_iter=1000):
@@ -237,7 +260,7 @@ def get_min2(a,b,tol,max_iter=1000):
 
 
 l1, l2 = 0.90, 1.03
-Ds2 = np.linspace(D_trg,0.1,10)
+Ds2 = np.linspace(D_trg,0.096,10)
 mus_opt2 = np.zeros_like(Ds2)
 lms_opt2 = np.zeros_like(Ds2)
 
@@ -263,5 +286,43 @@ plt.ylabel(r"$\mu$")
 # plt.savefig("mu.png",dpi=500)
 plt.show()
 
+
+# lms = np.linspace(1,1.01,50)
+# Ds2 = np.linspace(D_trg,0.1,10)
+# mus_opt2 = np.zeros_like(Ds2)
+# lms_opt2 = np.zeros_like(Ds2)
+
+
+# i=0
+# for D in Ds2:   
+#     print(D)
+#     Ls = np.zeros_like(lms)
+#     mus = np.zeros_like(lms)
+    
+#     j = 0
+#     for l in lms:
+#         dpsi , mus[j], s_star = solve2(l)
+#         Ls[j] = L2(dpsi,l,s_star)
+#         j+=1
+    
+#     idx = np.where(Ls == np.min(Ls))[0]
+#     lms_opt2[i] = lms[idx]
+#     mus_opt2[i] = mus[idx] 
+#     i += 1
+    
+
+# plt.plot(Ds,lms_opt,'o-')
+# plt.plot(Ds2,lms_opt2,'o-')
+# plt.xlabel("D")
+# plt.ylabel(r"$\Lambda$")
+# # plt.savefig("lambda.png",dpi=500)
+# plt.show()
+
+# plt.plot(Ds,mus_opt,'o-')
+# plt.plot(Ds2,mus_opt2,'o-')
+# plt.xlabel("D")
+# plt.ylabel(r"$\mu$")
+# # plt.savefig("mu.png",dpi=500)
+# plt.show()
 
 print("Execution time:",datetime.now() - startTime)
