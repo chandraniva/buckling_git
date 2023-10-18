@@ -7,7 +7,7 @@ from scipy import interpolate
 
 startTime = datetime.now()
 
-nodes = 1000
+nodes = 500
 sigma = np.linspace(0,1,nodes)
 
 nodes2 = 1000
@@ -15,7 +15,7 @@ sigma2 = np.linspace(0,1/2,nodes2)
 
 #parameters
 E = 15
-l0 = np.sqrt(20)
+l0 = np.sqrt(10)
     
 def solve(lamb):
     
@@ -52,7 +52,7 @@ def lag(sig,dpsi,lamb):
     return lamb + 1/lamb + dpsi[int(sig*nodes)]**2/8/lamb/E**2
 
 def L(dpsi,lamb):
-    return intg.quad(lag,0,1,args=(dpsi,lamb),limit=5000,epsrel=1e-10)[0]
+    return intg.quad(lag,0,1,args=(dpsi,lamb),limit=5000,epsrel=1e-4)[0]
  
 def get_min(a,b,tol,max_iter=1000):
     
@@ -97,7 +97,7 @@ global D
 
 l1, l2 = 1, 1.03
 
-Ds = np.linspace(0,0.1,10)
+Ds = np.linspace(0,0.4,30)
 mus_opt = np.zeros_like(Ds)
 lms_opt = np.zeros_like(Ds)
 x_plus_dot = np.zeros_like(Ds)
@@ -106,12 +106,14 @@ x_plus_dot = np.zeros_like(Ds)
 i=0
 for D in Ds:   
     print(D)
-    lms_opt[i], mus_opt[i], dpsi_opt = get_min(l1,l2,1e-8)
+    lms_opt[i], mus_opt[i], dpsi_opt = get_min(l1,l2,1e-6)
     p0 = dpsi_opt[0]
     f0 = 1 + p0**2/24/l0**2
-    x_plus_dot[i] = E* f0/lms_opt[i]/l0-lms_opt[i]/2*l0*p0*np.cos(p0/2/l0) 
+    x_plus_dot[i] = E* f0/lms_opt[i]/l0-lms_opt[i]*l0*p0*np.cos(p0/2/l0)/2
     i += 1
+    
 
+plt.plot(Ds,x_plus_dot,'.-')
 
 f = interpolate.UnivariateSpline(Ds, x_plus_dot, s=0)
 yToFind = 0
@@ -120,7 +122,7 @@ freduced = interpolate.UnivariateSpline(Ds, yreduced, s=0)
 D_trg = freduced.roots()[0]
 
 
-plt.plot(Ds,x_plus_dot,'.-')
+
 plt.axvline(x=D_trg,linestyle='--',c='red',linewidth=3)
 plt.xlabel("D")
 plt.ylabel(r"$\dot{x}_+$")
@@ -163,11 +165,11 @@ def solve2(lamb):
         I1 = yb[2]
         s_star1 = yb[4]
         
-        return np.array([psi0-psi_max*s_star0, dpsi0 - psi_max, I0, dpsi1,
+        return np.array([psi0-psi_max*s_star0, dpsi0 - (1-s_star0)*psi_max, I0, dpsi1,
         I1 - lamb*(1-D)/2 + (1+psi_max**2/8/E**2)*np.sin(psi_max*s_star0)/psi_max])
 
-    # if D == D_trg:
-    # D0 = 0.01
+    # if D == Ds2i:
+        # D0 = 0.01
     eps = np.sqrt(1 - lamb*(1-D))
     # eps = eps0*(D-D0)
     
@@ -205,8 +207,8 @@ def solve2(lamb):
     return [dpsi, np.mean(mu), np.mean(s_star)]
 
 
-def lag2(sig,dpsi,lamb):
-    return lamb + 1/lamb + dpsi[int(sig*nodes2)]**2/8/lamb/E**2
+def lag2(sig,dpsi,lamb,s_star):
+    return lamb + 1/lamb + dpsi[int(sig*nodes2)]**2/8/lamb/E**2/(1-2*s_star)**2
 
 
 def L2(dpsi,lamb,s_star):
@@ -216,7 +218,7 @@ def L2(dpsi,lamb,s_star):
     psi_max = roots[-1]
     
     return 2*s_star*(lamb+1/lamb+psi_max**2/8/lamb/E**2) + \
-    2*intg.quad(lag2,s_star,1/2,args=(dpsi,lamb),limit=100000,epsrel=1e-8)[0]
+    2*(1-2*s_star)*intg.quad(lag2,0,1/2,args=(dpsi,lamb,s_star),limit=100000,epsrel=1e-6)[0]
  
     
 def get_min2(a,b,tol,max_iter=1000):
@@ -235,12 +237,13 @@ def get_min2(a,b,tol,max_iter=1000):
         
         Ls = np.array([L2(a_dpsi,a,a_star),L2(a1_dpsi,a1,a1_star),L2(m_dpsi,m,m_star),
                        L2(b1_dpsi,b1,b1_star), L2(b_dpsi,b,b_star)])
+        # print(Ls)
         idx = np.where(np.min(Ls)==Ls)[0][0] 
         lm_min =  a + idx/4 * (b-a)
         
         if abs(b-a)<tol:
             dpsi_min, mu_min, s_star_min = solve2(lm_min)
-            return [lm_min, mu_min, dpsi_min]
+            return [lm_min, mu_min, dpsi_min, s_star_min]
         
         if idx == 0:
             b = a1
@@ -255,19 +258,24 @@ def get_min2(a,b,tol,max_iter=1000):
             a = b1
     
     dpsi_min, mu_min, s_star_min = solve2(lm_min)
-    return [lm_min, mu_min, dpsi_min]
+    return [lm_min, mu_min,  dpsi_min, s_star_min]
 
 
 
 l1, l2 = 0.90, 1.03
-Ds2 = np.linspace(D_trg,0.096,10)
+
+Ds2i = D_trg
+
+Ds2 = np.linspace(Ds2i,0.4,20)
 mus_opt2 = np.zeros_like(Ds2)
 lms_opt2 = np.zeros_like(Ds2)
+ss = np.zeros_like(Ds2)
 
 i=0
 for D in Ds2:   
     print(D)
-    lms_opt2[i], mus_opt2[i], dpsi_opt = get_min2(l1,l2,1e-8)
+    lms_opt2[i], mus_opt2[i], dpsi_min, ss[i]  = get_min2(l1,l2,1e-6)
+    # print(get_min2(l1,l2,1e-6))
     i += 1
 
 
@@ -276,6 +284,7 @@ plt.plot(Ds,lms_opt,'o-')
 plt.plot(Ds2,lms_opt2,'o-')
 plt.xlabel("D")
 plt.ylabel(r"$\Lambda$")
+plt.ylim(0.995,1.015)
 # plt.savefig("lambda.png",dpi=500)
 plt.show()
 
@@ -283,10 +292,11 @@ plt.plot(Ds,mus_opt,'o-')
 plt.plot(Ds2,mus_opt2,'o-')
 plt.xlabel("D")
 plt.ylabel(r"$\mu$")
+plt.ylim(0.01,0.02)
 # plt.savefig("mu.png",dpi=500)
 plt.show()
 
-
+plt.plot(Ds2,ss,'o-')
 # lms = np.linspace(1,1.01,50)
 # Ds2 = np.linspace(D_trg,0.1,10)
 # mus_opt2 = np.zeros_like(Ds2)
