@@ -15,8 +15,12 @@ sigma2 = np.linspace(0,1/2,nodes2)
 
 #parameters
 E = 15
-l0 = np.sqrt(20)
-global D
+l0 = np.sqrt(30)
+Ds_i = 0
+Ds_f = 0.1
+l1, l2 = 1, 1.015
+
+
 
     
 def solve(lamb):
@@ -95,9 +99,10 @@ def get_min(a,b,tol,max_iter=1000):
     
 
 
-l1, l2 = 1, 1.03
+global D
 
-Ds = np.linspace(0,0.1,30)
+
+Ds = np.linspace(Ds_i,Ds_f,40)
 mus_opt = np.zeros_like(Ds)
 lms_opt = np.zeros_like(Ds)
 x_plus_dot = np.zeros_like(Ds)
@@ -114,6 +119,8 @@ for D in Ds:
     
 
 plt.plot(Ds,x_plus_dot,'.-')
+plt.xlabel("D")
+plt.ylabel(r"$\dot{x}_+$")
 
 f = interpolate.UnivariateSpline(Ds, x_plus_dot, s=0)
 yToFind = 0
@@ -174,6 +181,7 @@ def solve2(lamb,y_init):
     I = sol.y[2]
     mu = sol.y[3]
     s_star = sol.y[4]
+    
     
     return [psi,dpsi,I,mu,s_star]
 
@@ -237,9 +245,9 @@ def get_min2(a,b,tol,y_init,max_iter=1000):
 print("-------------Bisection method-------------")
 
 
-l1, l2 = 1, 1.015
 
-Ds2 = np.linspace(D_trg,0.1,20)
+
+Ds2 = np.linspace(D_trg,Ds_f,20)
 mus_opt2 = np.zeros_like(Ds2)
 lms_opt2 = np.zeros_like(Ds2)
 s_opt2 = np.zeros_like(Ds2)
@@ -258,51 +266,56 @@ for D in Ds2:
         y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
         y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
         y_init[4] = np.zeros_like(sigma2)
-
+    
+    # if i==0:
     lms_opt2[i], sol  = get_min2(l1,l2,1e-6,y_init)
+    # else:
+    #     lms_opt2[i], sol  = get_min2(lms_opt2[i-1]-0.01,lms_opt2[i-1],1e-6,y_init)
     mus_opt2[i] = np.mean(sol[3])
     s_opt2[i] = np.mean(sol[4])
     y_init = sol
     i += 1
+    
+    
 
-print("--------------- brute force ---------------------")
+# print("--------------- brute force ---------------------")
 
 
-lms = np.linspace(1,1.015,200)
-Ds3 = np.linspace(D_trg,0.1,20)
-mus_opt3 = np.zeros_like(Ds3)
-lms_opt3 = np.zeros_like(Ds3)
-y_init = np.zeros((5,sigma2.size))
+# lms = np.linspace(l1,l2,100)
+# Ds3 = np.linspace(D_trg,Ds_f,10)
+# mus_opt3 = np.zeros_like(Ds3)
+# lms_opt3 = np.zeros_like(Ds3)
+# y_init = np.zeros((5,sigma2.size))
 
-i=0
-for D in Ds3:   
-    print(D)
-    if i == 0:
-        eps = np.sqrt(1 - 1*(1-D))
-        psi_init = eps*2/(1-np.pi**2/4/E**2)* np.sin(np.pi*sigma2)
-        dpsi_init = eps*2/(1-np.pi**2/4/E**2)* np.cos(np.pi*sigma2) * np.pi
+# i=0
+# for D in Ds3:   
+#     print(D)
+#     if i == 0:
+#         eps = np.sqrt(1 - 1*(1-D))
+#         psi_init = eps*2/(1-np.pi**2/4/E**2)* np.sin(np.pi*sigma2)
+#         dpsi_init = eps*2/(1-np.pi**2/4/E**2)* np.cos(np.pi*sigma2) * np.pi
         
-        y_init[0] = psi_init
-        y_init[1] = dpsi_init
-        y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
-        y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
-        y_init[4] = np.zeros_like(sigma2)
+#         y_init[0] = psi_init
+#         y_init[1] = dpsi_init
+#         y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
+#         y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
+#         y_init[4] = np.zeros_like(sigma2)
 
-    Ls = np.zeros_like(lms)
-    mus = np.zeros_like(lms)
+#     Ls = np.zeros_like(lms)
+#     mus = np.zeros_like(lms)
     
-    j = 0
-    for l in lms:
-        sol = solve2(l,y_init)
-        mus[j] = np.mean(sol[3])
-        Ls[j] = L2(l,sol)
-        j+=1
+#     j = 0
+#     for l in lms:
+#         sol = solve2(l,y_init)
+#         mus[j] = np.mean(sol[3])
+#         Ls[j] = L2(l,sol)
+#         j+=1
     
-    idx = np.where(Ls == np.min(Ls))[0][0]
-    lms_opt3[i] = lms[idx]
-    mus_opt3[i] = mus[idx] 
-    y_init = sol
-    i += 1
+#     idx = np.where(Ls == np.min(Ls))[0][0]
+#     lms_opt3[i] = lms[idx]
+#     mus_opt3[i] = mus[idx] 
+#     y_init = sol
+#     i += 1
     
     
 plt.plot(Ds,lms_opt,'o-',label=r'below $D_{\Delta}$')
@@ -310,10 +323,10 @@ plt.plot(Ds2,lms_opt2,'o-',label=r'above $D_{\Delta}$: bisection')
 # plt.plot(Ds3,lms_opt3,'o-',label=r'above $D_{\Delta}$: brute')
 plt.xlabel("D")
 plt.ylabel(r"$\Lambda$")
-plt.ylim(0.995,1.015)
+plt.ylim(l1,l2)
 plt.legend()
 plt.title("Using previous initial condition")
-plt.savefig("lambda_pinit.png",dpi=500)
+plt.savefig("lambda_pinit_l0_"+str(round(l0**2))+".png",dpi=500)
 plt.show()
 
 
@@ -325,7 +338,7 @@ plt.ylabel(r"$\mu$")
 plt.ylim(0.01,0.02)
 plt.legend()
 plt.title("Using previous initial condition")
-plt.savefig("mu_pinit.png",dpi=500)
+plt.savefig("mu_pinit_l0_"+str(round(l0**2))+".png",dpi=500)
 plt.show()
 
 

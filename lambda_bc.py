@@ -18,7 +18,6 @@ E = 15
 l0 = np.sqrt(20)
 Ds_i = 0
 Ds_f = 0.1
-l1, l2 = 1, 1.015
 
     
 def solve(y_init):
@@ -29,14 +28,16 @@ def solve(y_init):
         I = y[2]
         mu = y[3]
         lamb = y[4]
+        J = y[5]
         
         dpsi = dpsi
         ddpsi = 4*mu*E*E*np.sin(psi)*(dpsi**2/8/E**2 - 1)/(1+mu*np.cos(psi))
         dI = np.cos(psi)*(1+dpsi**2/8/E**2)
         dmu = np.zeros_like(psi)
         dlamb = np.zeros_like(psi)
+        dJ = dpsi**2/8/E**2
         
-        return np.vstack((dpsi,ddpsi,dI,dmu,dlamb))
+        return np.vstack((dpsi,ddpsi,dI,dmu,dlamb,dJ))
         
     def bc(ya,yb):
         
@@ -45,13 +46,15 @@ def solve(y_init):
         I0 = ya[2]
         mu0 = ya[3]
         lamb0 = ya[4]
+        J0 = ya[5]
 
         psi1 = yb[0]
         dpsi1 = yb[1]
         I1 = yb[2]
+        J1 = yb[5]
         
-        return np.array([psi0,I0,psi1,I1-lamb0*(1-D),
-                         lamb0**2-1-mu0*lamb0*(1-D)])
+        return np.array([psi0,I0,J0,psi1,I1-lamb0*(1-D),
+                         lamb0**2-1-J1-mu0*lamb0*(1-D)])
     
     
     sol = intg.solve_bvp(func,bc,sigma,y_init)
@@ -59,63 +62,21 @@ def solve(y_init):
     dpsi = sol.y[1]
     I = sol.y[2]
     mu = sol.y[3]
+    lamb = sol.y[4]
+    J = sol.y[5]
     
-    return np.array([psi,dpsi,I,mu])
+    return np.array([psi,dpsi,I,mu,lamb,J])
 
 
-def lag(sig,dpsi,lamb):
-    return lamb + 1/lamb + dpsi[int(sig*nodes)]**2/8/lamb/E**2
-
-def L(lamb,sol):
-    dpsi = sol[1]
-    return intg.quad(lag,0,1,args=(dpsi,lamb),limit=5000,epsrel=1e-4)[0]
- 
-def get_min(a,b,tol,y_init,max_iter=1000):
-    
-    for _ in range(max_iter):
-
-        m = (a+b)/2
-        a1 = (m+a)/2
-        b1 = (m+b)/2
-        
-        a_sol = solve(a,y_init)
-        a1_sol = solve(a1,y_init)
-        m_sol= solve(m,y_init)
-        b1_sol = solve(b1,y_init)
-        b_sol = solve(b,y_init)
-        
-        Ls = np.array([L(a,a_sol),L(a1,a1_sol),L(m,m_sol),L(b1,b1_sol), 
-                       L(b,b_sol)])
-        idx = np.where(np.min(Ls)==Ls)[0][0]
-        lm_min =  a + idx/4 * (b-a)
-        
-        if abs(b-a)<tol:
-            sol_min = solve(lm_min,y_init)
-            return [lm_min, sol_min]
-        
-        if idx == 0:
-            b = a1
-        elif idx == 1:
-            b = m
-        elif idx == 2:
-            a = a1
-            b = b1
-        elif idx == 3:
-            a = m
-        elif idx == 4:
-            a = b1
-    
-    print("---------- No convergence of solution ----------")
-    
     
 global D
 
 
-Ds = np.linspace(Ds_i,Ds_f,20)
+Ds = np.linspace(Ds_i,Ds_f,50)
 mus_opt = np.zeros_like(Ds)
 lms_opt = np.zeros_like(Ds)
 x_plus_dot = np.zeros_like(Ds)
-y_init = np.zeros((4,sigma.size))
+y_init = np.zeros((6,sigma.size))
 
 
 i=0
@@ -130,10 +91,16 @@ for D in Ds:
         y_init[0] = psi_init
         y_init[1] = dpsi_init
         y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
-        y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma) 
+        y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma)
+        y_init[4] = np.ones_like(psi_init)
+        y_init[5] = (eps*2/(1-np.pi**2/4/E**2)*np.pi)**2 \
+                    *(np.pi*sigma/2+np.sin(2*np.pi*sigma)/4) #psi_init/8/E**2
         
-    lms_opt[i], sol  = get_min(l1,l2,1e-6,y_init)
+    sol = solve(y_init)
+    
     mus_opt[i] = np.mean(sol[3])
+    lms_opt[i] = np.mean(sol[4])
+    
     dpsi_opt = sol[1]
     p0 = dpsi_opt[0]
     f0 = 1 + p0**2/24/l0**2
@@ -174,6 +141,7 @@ def solve2(lamb,y_init):
         I = y[2]
         mu = y[3]
         s_star = y[4]
+        lamb = y[5]
         
         dpsi = dpsi
         ddpsi = 4*mu*E*E*np.sin(psi)*(dpsi**2/8/E**2/(1-2*s_star)**2 - 1)\
@@ -181,8 +149,10 @@ def solve2(lamb,y_init):
         dI = np.cos(psi)*(1+dpsi**2/8/E**2/(1-2*s_star)**2)*(1-2*s_star)
         dmu = np.zeros_like(psi)
         ds_star = np.zeros_like(psi)
+        dlamb = np.zeros(psi)
+        dJ = dpsi**2/8/E**2
         
-        return np.vstack((dpsi,ddpsi,dI,dmu,ds_star))
+        return np.vstack((dpsi,ddpsi,dI,dmu,ds_star,dlamb,dJ))
         
     def bc2(ya,yb):
         
@@ -190,6 +160,8 @@ def solve2(lamb,y_init):
         dpsi0 = ya[1]
         I0 = ya[2]
         s_star0 = ya[4]
+        lamb0 = ya[5]
+        J0 = ya[6]
 
         dpsi1 = yb[1]
         I1 = yb[2]
@@ -209,65 +181,9 @@ def solve2(lamb,y_init):
     return [psi,dpsi,I,mu,s_star]
 
 
-def lag2(sig,dpsi,lamb,s_star):
-    return lamb + 1/lamb + dpsi[int(sig*nodes2)]**2/8/lamb/E**2/(1-2*s_star)**2
 
 
-def L2(lamb,sol):
-    dpsi = sol[1]
-    s_star = np.mean(sol[4])
-    
-    roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
-                      1/lamb])
-    psi_max = roots[-1]
-    
-    return 2*s_star*(lamb+1/lamb+psi_max**2/8/lamb/E**2) + \
-    2*(1-2*s_star)*intg.quad(lag2,0,1/2,args=(dpsi,lamb,s_star),limit=100000,epsrel=1e-5)[0]
- 
-    
-def get_min2(a,b,tol,y_init,max_iter=1000):
-    
-    for _ in range(max_iter):
-
-        m = (a+b)/2
-        a1 = (m+a)/2
-        b1 = (m+b)/2
-        
-        a_sol = solve2(a,y_init)
-        a1_sol = solve2(a1,y_init)
-        m_sol= solve2(m,y_init)
-        b1_sol = solve2(b1,y_init)
-        b_sol = solve2(b,y_init)
-        
-        
-        
-        Ls = np.array([L2(a,a_sol),L2(a1,a1_sol),L2(m,m_sol),L2(b1,b1_sol), 
-                       L2(b,b_sol)])
-        idx = np.where(np.min(Ls)==Ls)[0][0] 
-        lm_min =  a + idx/4 * (b-a)
-        
-        if abs(b-a)<tol:
-            sol_min = solve2(lm_min,y_init)
-            return [lm_min, sol_min]
-        
-        if idx == 0:
-            b = a1
-        elif idx==1:
-            b = m
-        elif idx == 2:
-            a = a1
-            b = b1
-        elif idx == 3:
-            a = m
-        elif idx == 4:
-            a = b1
-    
-    print(" ---------- No convergence of solution ----------")
-
-
-print("-------------Bisection method-------------")
-
-
+print("-------------above D_trg------------")
 
 
 Ds2 = np.linspace(D_trg,Ds_f,10)
@@ -289,59 +205,63 @@ for D in Ds2:
         y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
         y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
         y_init[4] = np.zeros_like(sigma2)
+        y_init[5] = np.zeros_like(sigma2)
+        y_init[6] = np.zeros_like(sigma2)
+        
 
-    lms_opt2[i], sol  = get_min2(l1,l2,1e-6,y_init)
+    sol  = solve2(y_init)
+    lms_opt2[i] = np.mean(sol[5])
     mus_opt2[i] = np.mean(sol[3])
     s_opt2[i] = np.mean(sol[4])
     y_init = sol
     i += 1
 
-print("--------------- brute force ---------------------")
+# print("--------------- brute force ---------------------")
 
 
-lms = np.linspace(l1,l2,100)
-Ds3 = np.linspace(D_trg,Ds_f,10)
-mus_opt3 = np.zeros_like(Ds3)
-lms_opt3 = np.zeros_like(Ds3)
-y_init = np.zeros((5,sigma2.size))
+# lms = np.linspace(l1,l2,100)
+# Ds3 = np.linspace(D_trg,Ds_f,10)
+# mus_opt3 = np.zeros_like(Ds3)
+# lms_opt3 = np.zeros_like(Ds3)
+# y_init = np.zeros((5,sigma2.size))
 
-i=0
-for D in Ds3:   
-    print(D)
-    if i == 0:
-        eps = np.sqrt(1 - 1*(1-D))
-        psi_init = eps*2/(1-np.pi**2/4/E**2)* np.sin(np.pi*sigma2)
-        dpsi_init = eps*2/(1-np.pi**2/4/E**2)* np.cos(np.pi*sigma2) * np.pi
+# i=0
+# for D in Ds3:   
+#     print(D)
+#     if i == 0:
+#         eps = np.sqrt(1 - 1*(1-D))
+#         psi_init = eps*2/(1-np.pi**2/4/E**2)* np.sin(np.pi*sigma2)
+#         dpsi_init = eps*2/(1-np.pi**2/4/E**2)* np.cos(np.pi*sigma2) * np.pi
         
-        y_init[0] = psi_init
-        y_init[1] = dpsi_init
-        y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
-        y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
-        y_init[4] = np.zeros_like(sigma2)
+#         y_init[0] = psi_init
+#         y_init[1] = dpsi_init
+#         y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
+#         y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
+#         y_init[4] = np.zeros_like(sigma2)
 
-    Ls = np.zeros_like(lms)
-    mus = np.zeros_like(lms)
+#     Ls = np.zeros_like(lms)
+#     mus = np.zeros_like(lms)
     
-    j = 0
-    for l in lms:
-        sol = solve2(l,y_init)
-        mus[j] = np.mean(sol[3])
-        Ls[j] = L2(l,sol)
-        j+=1
+#     j = 0
+#     for l in lms:
+#         sol = solve2(l,y_init)
+#         mus[j] = np.mean(sol[3])
+#         Ls[j] = L2(l,sol)
+#         j+=1
     
-    idx = np.where(Ls == np.min(Ls))[0][0]
-    lms_opt3[i] = lms[idx]
-    mus_opt3[i] = mus[idx] 
-    y_init = sol
-    i += 1
+#     idx = np.where(Ls == np.min(Ls))[0][0]
+#     lms_opt3[i] = lms[idx]
+#     mus_opt3[i] = mus[idx] 
+#     y_init = sol
+#     i += 1
     
     
 plt.plot(Ds,lms_opt,'o-',label=r'below $D_{\Delta}$')
-plt.plot(Ds2,lms_opt2,'o-',label=r'above $D_{\Delta}$: bisection')
-plt.plot(Ds3,lms_opt3,'o-',label=r'above $D_{\Delta}$: brute')
+# plt.plot(Ds2,lms_opt2,'o-',label=r'above $D_{\Delta}$: bisection')
+# plt.plot(Ds3,lms_opt3,'o-',label=r'above $D_{\Delta}$: brute')
 plt.xlabel("D")
 plt.ylabel(r"$\Lambda$")
-plt.ylim(l1,l2)
+# plt.ylim(l1,l2)
 plt.legend()
 plt.title("Using previous initial condition")
 # plt.savefig("lambda_pinit.png",dpi=500)
@@ -349,19 +269,19 @@ plt.show()
 
 
 plt.plot(Ds,mus_opt,'o-',label=r'below $D_{\Delta}$')
-plt.plot(Ds2,mus_opt2,'o-',label=r'above $D_{\Delta}$: bisection')
-plt.plot(Ds3,mus_opt3,'o-',label=r'above $D_{\Delta}$: brute')
+# plt.plot(Ds2,mus_opt2,'o-',label=r'above $D_{\Delta}$: bisection')
+# plt.plot(Ds3,mus_opt3,'o-',label=r'above $D_{\Delta}$: brute')
 plt.xlabel("D")
 plt.ylabel(r"$\mu$")
-plt.ylim(0.01,0.02)
+# plt.ylim(0.01,0.02)
 plt.legend()
 plt.title("Using previous initial condition")
 # plt.savefig("mu_pinit.png",dpi=500)
 plt.show()
 
 
-plt.plot(Ds2,s_opt2,'o-')
-plt.show()
+# plt.plot(Ds2,s_opt2,'o-')
+# plt.show()
 
 
 print("Execution time:",datetime.now() - startTime)

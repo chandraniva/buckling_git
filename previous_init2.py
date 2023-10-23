@@ -7,7 +7,7 @@ from scipy import interpolate
 
 startTime = datetime.now()
 
-nodes = 1000
+nodes = 2000
 sigma = np.linspace(0,1,nodes)
 
 nodes2 = 1000
@@ -15,7 +15,7 @@ sigma2 = np.linspace(0,1/2,nodes2)
 
 #parameters
 E = 15
-l0 = np.sqrt(20)
+l0 = np.sqrt(15)
 Ds_i = 0
 Ds_f = 0.1
 l1, l2 = 1, 1.015
@@ -48,7 +48,7 @@ def lag(sig,dpsi,lamb):
 
 def L(lamb,sol):
     dpsi = sol[1]
-    return intg.quad(lag,0,1,args=(dpsi,lamb),limit=5000,epsrel=1e-4)[0]
+    return intg.quad(lag,0,1,args=(dpsi,lamb),limit=100000,epsrel=1e-5)[0]
  
 def get_min(a,b,tol,y_init,max_iter=1000):
     
@@ -91,7 +91,7 @@ def get_min(a,b,tol,y_init,max_iter=1000):
 global D
 
 
-Ds = np.linspace(Ds_i,Ds_f,20)
+Ds = np.linspace(Ds_i,Ds_f,40)
 mus_opt = np.zeros_like(Ds)
 lms_opt = np.zeros_like(Ds)
 x_plus_dot = np.zeros_like(Ds)
@@ -250,7 +250,7 @@ print("-------------Bisection method-------------")
 
 
 
-Ds2 = np.linspace(D_trg,Ds_f,10)
+Ds2 = np.linspace(D_trg,Ds_f,20)
 mus_opt2 = np.zeros_like(Ds2)
 lms_opt2 = np.zeros_like(Ds2)
 s_opt2 = np.zeros_like(Ds2)
@@ -318,25 +318,25 @@ for D in Ds3:
     
 plt.plot(Ds,lms_opt,'o-',label=r'below $D_{\Delta}$')
 plt.plot(Ds2,lms_opt2,'o-',label=r'above $D_{\Delta}$: bisection')
-plt.plot(Ds3,lms_opt3,'o-',label=r'above $D_{\Delta}$: brute')
+# plt.plot(Ds3,lms_opt3,'o-',label=r'above $D_{\Delta}$: brute')
 plt.xlabel("D")
 plt.ylabel(r"$\Lambda$")
 plt.ylim(l1,l2)
 plt.legend()
 plt.title("Using previous initial condition")
-# plt.savefig("lambda_pinit.png",dpi=500)
+plt.savefig("lambda_pinit.png",dpi=500)
 plt.show()
 
 
 plt.plot(Ds,mus_opt,'o-',label=r'below $D_{\Delta}$')
 plt.plot(Ds2,mus_opt2,'o-',label=r'above $D_{\Delta}$: bisection')
-plt.plot(Ds3,mus_opt3,'o-',label=r'above $D_{\Delta}$: brute')
+# plt.plot(Ds3,mus_opt3,'o-',label=r'above $D_{\Delta}$: brute')
 plt.xlabel("D")
 plt.ylabel(r"$\mu$")
 plt.ylim(0.01,0.02)
 plt.legend()
 plt.title("Using previous initial condition")
-# plt.savefig("mu_pinit.png",dpi=500)
+plt.savefig("mu_pinit.png",dpi=500)
 plt.show()
 
 
