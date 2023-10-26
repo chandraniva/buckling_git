@@ -15,9 +15,9 @@ sigma2 = np.linspace(0,1/2,nodes2)
 
 #parameters
 E = 15
-l0 = np.sqrt(10)
+l0 = np.sqrt(20)
 Ds_i = 0
-Ds_f = 0.4
+Ds_f = 0.1
 l1,l2 = 0.995,1.015
 
     
@@ -67,6 +67,27 @@ def solve(y_init):
     J = sol.y[5]
     
     return np.array([psi,dpsi,I,mu,lamb,J])
+
+def shape(psi,dpsi,lamb):
+    phi = dpsi/2/E
+    f = 1+dpsi**2/24/E**2
+    dx = f*np.cos(psi)#-g*np.sin(psi)
+    dy = f*np.sin(psi)#-g*np.cos(psi)
+    x =  np.cumsum(dx)
+    y =  np.cumsum(dy)
+    xp = x - l0*lamb/2*np.sin(psi)*np.cos(phi)
+    xm = x + l0*lamb/2*np.sin(psi)*np.cos(phi)
+    yp = y + l0*lamb/2*np.sin(psi)*np.cos(phi)
+    ym = y - l0*lamb/2*np.sin(psi)*np.cos(phi)
+    
+    fig, ax = plt.subplots()
+    ax.plot(x, y)
+    ax.plot(xp,yp)
+    ax.plot(xm,ym)
+    plt.title("Cell shape")
+    # plt.xlim(400,450)
+    # plt.ylim(100,150)
+    plt.show()
 
 
 global D
@@ -118,6 +139,10 @@ for D in Ds:
     x_plus_dot[i] = E*f0/lms_opt[i]/l0 - lms_opt[i]*l0*p0*np.cos(p0/2/E)/2
     
     y_init = sol
+    
+    
+    if i==0:
+        shape(sol[0],sol[1],lms_opt[i])
     
     i += 1
 
@@ -204,6 +229,7 @@ def solve2(y_init):
     return [psi,dpsi,I,mu,s_star,lamb,J]
 
 
+
 print("-------------above D_trg------------")
 
 
@@ -229,7 +255,7 @@ for D in Ds2:
         y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
         y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
         y_init[4] = np.zeros_like(sigma2)+1e-3
-        y_init[5] = 1.0*np.ones_like(sigma2)
+        y_init[5] = 1.01*np.ones_like(sigma2)
         y_init[6] =  (eps*2/(1-np.pi**2/4/E**2)*np.pi)**2 \
                     *(np.pi*sigma2/2+np.sin(2*np.pi*sigma2)/4)/8/E**2
         
@@ -241,6 +267,8 @@ for D in Ds2:
     s_opt2[i] = np.mean(sol[4])
     s_star2[i] = np.mean(sol[4])
     y_init = sol
+    
+    
     i += 1
 
 
@@ -260,7 +288,7 @@ plt.xlim(0,Ds_f)
 plt.ylim(1,1.015)
 plt.legend()
 plt.title("Using previous initial condition")
-plt.savefig("lambda_l0_"+str(round(l0**2))+".png",dpi=500)
+# plt.savefig("lambda_l0_"+str(round(l0**2))+".png",dpi=500)
 plt.show()
 
 
@@ -273,7 +301,7 @@ plt.ylabel(r"$\mu$")
 plt.ylim(0.0,0.04)
 plt.legend()
 plt.title("Using previous initial condition")
-plt.savefig("mu_l0_"+str(round(l0**2))+".png",dpi=500)
+# plt.savefig("mu_l0_"+str(round(l0**2))+".png",dpi=500)
 plt.show()
 
 

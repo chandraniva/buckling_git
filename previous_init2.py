@@ -175,7 +175,7 @@ def solve2(lamb,y_init):
         I1 = yb[2]
         s_star1 = yb[4]
         
-        return np.array([psi0-psi_max*s_star0, dpsi0 - (1-s_star0)*psi_max, I0, dpsi1,
+        return np.array([psi0-psi_max*s_star0, dpsi0 - (1-2*s_star0)*psi_max, I0, dpsi1,
         I1 - lamb*(1-D)/2 + (1+psi_max**2/8/E**2)*np.sin(psi_max*s_star0)/psi_max])
 
     sol = intg.solve_bvp(func2,bc2,sigma2,y_init)
