@@ -15,9 +15,9 @@ sigma2 = np.linspace(0,1/2,nodes2)
 
 #parameters
 E = 15
-l0 = np.sqrt(20)
+l0 = np.sqrt(10)
 Ds_i = 0
-Ds_f = 0.1
+Ds_f = 0.4
 l1,l2 = 0.995,1.015
 
     
@@ -68,25 +68,28 @@ def solve(y_init):
     
     return np.array([psi,dpsi,I,mu,lamb,J])
 
-def shape(psi,dpsi,lamb):
+def shape1(psi,dpsi,lamb,mu,D):
+    ddpsi = 4*mu*E**2*np.sin(psi)/(1+mu*np.cos(psi))*(dpsi**2/8/E**2 - 1)
     phi = dpsi/2/E
     f = 1+dpsi**2/24/E**2
-    dx = f*np.cos(psi)#-g*np.sin(psi)
-    dy = f*np.sin(psi)#-g*np.cos(psi)
-    x =  np.cumsum(dx)
-    y =  np.cumsum(dy)
+    g = ddpsi/12/E**2 
+    dx = (f*np.cos(psi) - g*np.sin(psi))/lamb*E/l0
+    dy = (f*np.sin(psi) - g*np.cos(psi))/lamb*E/l0
+    x =  np.cumsum(dx)/nodes 
+    y =  np.cumsum(dy)/nodes
     xp = x - l0*lamb/2*np.sin(psi)*np.cos(phi)
     xm = x + l0*lamb/2*np.sin(psi)*np.cos(phi)
-    yp = y + l0*lamb/2*np.sin(psi)*np.cos(phi)
-    ym = y - l0*lamb/2*np.sin(psi)*np.cos(phi)
+    yp = y + l0*lamb/2*np.cos(psi)*np.cos(phi)
+    ym = y - l0*lamb/2*np.cos(psi)*np.cos(phi)
+    
     
     fig, ax = plt.subplots()
     ax.plot(x, y)
     ax.plot(xp,yp)
     ax.plot(xm,ym)
-    plt.title("Cell shape")
-    # plt.xlim(400,450)
-    # plt.ylim(100,150)
+    plt.title("Cell shape for D = "+str(int(D*1e6)/1e6))
+    plt.xlim(np.min(xp)-1,np.max(xm)+1)
+    plt.ylim(np.min(ym)-1,np.max(yp)+1)
     plt.show()
 
 
@@ -99,6 +102,10 @@ x_plus_dot = np.zeros_like(Ds)
 y_init = np.zeros((6,sigma.size))
 z = np.pi**2/4/E**2
 D_star = 1-np.sqrt(1-z)
+
+#D for cell shape 
+Dx = 0.3
+ix = np.where(abs(Ds - Dx) == min(abs(Ds-Dx)))[0]
 
 i=0
 for D in Ds:   
@@ -140,9 +147,8 @@ for D in Ds:
     
     y_init = sol
     
-    
-    if i==0:
-        shape(sol[0],sol[1],lms_opt[i])
+    if D==Ds[ix]:
+        shape1(sol[0],sol[1],lms_opt[i],mus_opt[i],D)
     
     i += 1
 
@@ -229,17 +235,47 @@ def solve2(y_init):
     return [psi,dpsi,I,mu,s_star,lamb,J]
 
 
+def shape2(psi,dpsi,lamb,mu,s_star,D):
+    print("s*=",s_star)
+    roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
+                      1/lamb])
+    dpsi_max = roots[-1]
+    ddpsi = 4*mu*E*E*np.sin(psi)*(dpsi_max**2/8/E**2 +
+        dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
+    phi = dpsi/2/E/(1-2*s_star)
+    f = dpsi_max**2/24/E**2 + 1+dpsi**2/24/E**2/(1-2*s_star)**2
+    g = ddpsi/12/E**2/(1-2*s_star)**2
+    dx = (f*np.cos(psi) - g*np.sin(psi))/lamb*E/l0
+    dy = (f*np.sin(psi) - g*np.cos(psi))/lamb*E/l0
+    x =  np.cumsum(dx)/nodes 
+    y =  np.cumsum(dy)/nodes
+    xp = x - l0*lamb/2*np.sin(psi)*np.cos(phi)
+    xm = x + l0*lamb/2*np.sin(psi)*np.cos(phi)
+    yp = y + l0*lamb/2*np.cos(psi)*np.cos(phi)
+    ym = y - l0*lamb/2*np.cos(psi)*np.cos(phi)
+    
+    fig, ax = plt.subplots()
+    ax.plot(x, y)
+    ax.plot(xp,yp)
+    ax.plot(xm,ym)
+    plt.title("Cell shape for D = "+str(int(D*1e6)/1e6))
+    plt.xlim(np.min(xp)-1,np.max(xm)+1)
+    plt.ylim(np.min(ym)-1,np.max(yp)+1)
+    plt.show()
+
 
 print("-------------above D_trg------------")
-
 
 
 Ds2 = np.linspace(D_trg,Ds_f,100)
 mus_opt2 = np.zeros_like(Ds2)
 lms_opt2 = np.zeros_like(Ds2)
 s_opt2 = np.zeros_like(Ds2)
-s_star2 = np.zeros_like(Ds2)
 y_init = np.zeros((7,sigma2.size))
+
+#D for cell shape 
+Dx = 0.3
+ix = np.where(abs(Ds2 - Dx) == min(abs(Ds2-Dx)))[0]
 
 i=0
 for D in Ds2:   
@@ -254,8 +290,8 @@ for D in Ds2:
         y_init[1] = dpsi_init
         y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
         y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
-        y_init[4] = np.zeros_like(sigma2)+1e-3
-        y_init[5] = 1.01*np.ones_like(sigma2)
+        y_init[4] = np.zeros_like(sigma2)
+        y_init[5] = 1.00*np.ones_like(sigma2)
         y_init[6] =  (eps*2/(1-np.pi**2/4/E**2)*np.pi)**2 \
                     *(np.pi*sigma2/2+np.sin(2*np.pi*sigma2)/4)/8/E**2
         
@@ -265,9 +301,10 @@ for D in Ds2:
     lms_opt2[i] = np.mean(sol[5])
     mus_opt2[i] = np.mean(sol[3])
     s_opt2[i] = np.mean(sol[4])
-    s_star2[i] = np.mean(sol[4])
     y_init = sol
     
+    if D==Ds2[ix]:
+        shape2(sol[0],sol[1],lms_opt2[i],mus_opt2[i],s_opt2[i],D)
     
     i += 1
 
@@ -285,7 +322,7 @@ plt.axvline(x=D_trg,linestyle='--',c='red',linewidth=2,label=r'$D_{\Delta}$')
 plt.xlabel("D")
 plt.ylabel(r"$\Lambda$")
 plt.xlim(0,Ds_f)
-plt.ylim(1,1.015)
+# plt.ylim(1,1.015)
 plt.legend()
 plt.title("Using previous initial condition")
 # plt.savefig("lambda_l0_"+str(round(l0**2))+".png",dpi=500)
@@ -298,7 +335,7 @@ plt.axvline(x=D_star,linestyle='--',c='black',linewidth=2,label=r'$D^*$')
 plt.axvline(x=D_trg,linestyle='--',c='red',linewidth=2,label=r'$D_{\Delta}$')
 plt.xlabel("D")
 plt.ylabel(r"$\mu$")
-plt.ylim(0.0,0.04)
+# plt.ylim(0.0,0.04)
 plt.legend()
 plt.title("Using previous initial condition")
 # plt.savefig("mu_l0_"+str(round(l0**2))+".png",dpi=500)
