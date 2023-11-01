@@ -82,14 +82,17 @@ def shape1(psi,dpsi,lamb,mu,D):
     yp = y + l0*lamb/2*np.cos(psi)*np.cos(phi)
     ym = y - l0*lamb/2*np.cos(psi)*np.cos(phi)
     
+    xc = max(x)
+    yc = max(y)
     
     fig, ax = plt.subplots()
-    ax.plot(x, y)
-    ax.plot(xp,yp)
-    ax.plot(xm,ym)
-    plt.title("Cell shape for D = "+str(int(D*1e6)/1e6))
-    plt.xlim(np.min(xp)-1,np.max(xm)+1)
-    plt.ylim(np.min(ym)-1,np.max(yp)+1)
+    ax.plot(x, y,'blue')
+    ax.plot(2*xc-x, y,'blue')
+    ax.plot(xp,yp,'red')
+    ax.plot(2*xc-xp, yp,'red')
+    ax.plot(xm,ym,'green')
+    ax.plot(2*xc-xm, ym,'green')
+    plt.title("D = "+str(int(D*1e6)/1e6))
     plt.show()
 
 
@@ -104,7 +107,7 @@ z = np.pi**2/4/E**2
 D_star = 1-np.sqrt(1-z)
 
 #D for cell shape 
-Dx = 0.3
+Dx = 0.16
 ix = np.where(abs(Ds - Dx) == min(abs(Ds-Dx)))[0]
 
 i=0
@@ -236,31 +239,74 @@ def solve2(y_init):
 
 
 def shape2(psi,dpsi,lamb,mu,s_star,D):
-    print("s*=",s_star)
+    
     roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
                       1/lamb])
-    dpsi_max = roots[-1]
-    ddpsi = 4*mu*E*E*np.sin(psi)*(dpsi_max**2/8/E**2 +
-        dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
-    phi = dpsi/2/E/(1-2*s_star)
-    f = dpsi_max**2/24/E**2 + 1+dpsi**2/24/E**2/(1-2*s_star)**2
-    g = ddpsi/12/E**2/(1-2*s_star)**2
-    dx = (f*np.cos(psi) - g*np.sin(psi))/lamb*E/l0
-    dy = (f*np.sin(psi) - g*np.cos(psi))/lamb*E/l0
-    x =  np.cumsum(dx)/nodes 
-    y =  np.cumsum(dy)/nodes
-    xp = x - l0*lamb/2*np.sin(psi)*np.cos(phi)
-    xm = x + l0*lamb/2*np.sin(psi)*np.cos(phi)
-    yp = y + l0*lamb/2*np.cos(psi)*np.cos(phi)
-    ym = y - l0*lamb/2*np.cos(psi)*np.cos(phi)
+    psi_max = roots[-1]
     
+    print("s*=",s_star)
+    print("dpsi_max=",psi_max)
+    
+    sig3 = np.linspace(0,s_star,500)
+    
+    ddpsi = 4*mu*E*E*np.sin(psi)*\
+    (dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
+    
+    phi1 = psi_max/2/E*np.ones_like(sig3)
+    phi2 = dpsi/2/E/(1-2*s_star)
+    phi = np.concatenate((phi1,phi2),axis=None)
+    
+    f = 1+dpsi**2/24/E**2/(1-2*s_star)**2
+    g = ddpsi/12/E**2/(1-2*s_star)**2
+    
+    f_max = 1 + psi_max**2/24/E**2
+    
+    Icos = np.sin(psi_max*s_star)/psi_max  
+    Isin = (1-np.cos(psi_max*s_star))/psi_max  
+    
+    dx = (f*np.cos(psi) - g*np.sin(psi))*(1-2*s_star)
+    dy = (f*np.sin(psi) - g*np.cos(psi))*(1-2*s_star)
+    
+    x1 = (f_max*np.sin(psi_max*sig3)/psi_max)/lamb*E/l0
+    y1 = (f_max*(1-np.cos(psi_max*sig3))/psi_max)/lamb*E/l0
+    x2 =  (f_max*Icos  + np.cumsum(dx)/nodes)/lamb*E/l0
+    y2 =  (f_max*Isin  + np.cumsum(dy)/nodes)/lamb*E/l0
+    
+    x = np.concatenate((x1,x2),axis=None)
+    y = np.concatenate((y1,y2),axis=None)
+    
+    psi_i = np.concatenate((psi_max*sig3,psi),axis=None)
+    
+    xp = x - l0*lamb/2*np.sin(psi_i)*np.cos(phi)
+    xm = x + l0*lamb/2*np.sin(psi_i)*np.cos(phi)
+    yp = y + l0*lamb/2*np.cos(psi_i)*np.cos(phi)
+    ym = y - l0*lamb/2*np.cos(psi_i)*np.cos(phi)
+    
+    xc = max(x)
+    yc = max(y)
+    xc2 = max(2*xc-x)
+    
+
     fig, ax = plt.subplots()
-    ax.plot(x, y)
-    ax.plot(xp,yp)
-    ax.plot(xm,ym)
-    plt.title("Cell shape for D = "+str(int(D*1e6)/1e6))
-    plt.xlim(np.min(xp)-1,np.max(xm)+1)
-    plt.ylim(np.min(ym)-1,np.max(yp)+1)
+    
+    ax.plot(x, y,'blue')
+    ax.plot(2*xc-x, 2*yc-y,'blue')
+    ax.plot(2*xc2-x, y,'blue')
+    ax.plot(2*xc2-2*xc+x, 2*yc-y,'blue')
+    
+    ax.plot(xp,yp,'red')
+    ax.plot(2*xc-xp, 2*yc-yp,'green')
+    ax.plot(2*xc2-xp, yp,'red')
+    ax.plot(2*xc2-2*xc+xp, 2*yc-yp,'green')
+    
+    ax.plot(xm,ym,'green')
+    ax.plot(2*xc-xm, 2*yc-ym,'red')
+    ax.plot(2*xc2-xm, ym,'green')
+    ax.plot(2*xc2-2*xc+xm, 2*yc-ym,'red')
+    
+    plt.title("D = "+str(int(D*1e6)/1e6))
+    # plt.xlim(np.min(xp)-1,np.max(xm)+1)
+    # plt.ylim(np.min(ym)-1,np.max(yp)+1)
     plt.show()
 
 
@@ -273,8 +319,8 @@ lms_opt2 = np.zeros_like(Ds2)
 s_opt2 = np.zeros_like(Ds2)
 y_init = np.zeros((7,sigma2.size))
 
-#D for cell shape 
-Dx = 0.3
+#D for cell shape
+Dx = 0.35
 ix = np.where(abs(Ds2 - Dx) == min(abs(Ds2-Dx)))[0]
 
 i=0
