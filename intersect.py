@@ -10,14 +10,17 @@ startTime = datetime.now()
 nodes = 1000
 sigma = np.linspace(0,1,nodes)
 
-nodes2 = 1000
+nodes2 = 2000
 sigma2 = np.linspace(0,1/2,nodes2)
+
+nodes3 = 1000
+sigma3 = np.linspace(0,1/2,nodes3)
 
 #parameters
 E = 15
-l0 = np.sqrt(18)
+l0 = np.sqrt(10)
 Ds_i = 0
-Ds_f = 0.8
+Ds_f = 0.5
 l1,l2 = 0.995,1.015
 
     
@@ -237,17 +240,18 @@ def solve2(y_init):
     return [psi,dpsi,I,mu,s_star,lamb,J]
 
 
-def shape2(psi,dpsi,lamb,mu,s_star,D):
+def intersect(psi,dpsi,lamb,mu,s_star,D):
+    tol = 1e-4
     
     roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
                       1/lamb])
     psi_max = roots[-1]
-    sig3 = np.linspace(0,s_star,500)
+    # sig3 = np.linspace(0,s_star,500)
     
     ddpsi = 4*mu*E*E*np.sin(psi)*\
     (dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
     
-    phi1 = psi_max/2/E*np.ones_like(sig3)
+    phi1 = psi_max/2/E*np.ones_like(sigma3)
     phi2 = dpsi/2/E/(1-2*s_star)
     phi = np.concatenate((phi1,phi2),axis=None)
     
@@ -262,15 +266,15 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     dx = (f*np.cos(psi) - g*np.sin(psi))*(1-2*s_star)
     dy = (f*np.sin(psi) - g*np.cos(psi))*(1-2*s_star)
     
-    x1 = (f_max*np.sin(psi_max*sig3)/psi_max)/lamb*E/l0
-    y1 = (f_max*(1-np.cos(psi_max*sig3))/psi_max)/lamb*E/l0
+    x1 = (f_max*np.sin(psi_max*sigma3)/psi_max)/lamb*E/l0
+    y1 = (f_max*(1-np.cos(psi_max*sigma3))/psi_max)/lamb*E/l0
     x2 =  (f_max*Icos  + np.cumsum(dx)/nodes)/lamb*E/l0
     y2 =  (f_max*Isin  + np.cumsum(dy)/nodes)/lamb*E/l0
     
     x = np.concatenate((x1,x2),axis=None)
     y = np.concatenate((y1,y2),axis=None)
     
-    psi_i = np.concatenate((psi_max*sig3,psi),axis=None)
+    psi_i = np.concatenate((psi_max*sigma3,psi),axis=None)
     
     xp = x - l0*lamb/2*np.sin(psi_i)*np.cos(phi)
     xm = x + l0*lamb/2*np.sin(psi_i)*np.cos(phi)
@@ -279,36 +283,14 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     
     xc = x[-1]
     yc = y[-1]
-    xc2 = max(2*xc-x)
     
-    # print(2*xc-xp[0])
-    # print(max(2*xc-xp))
-    # print(max(xm))
-    
-    if 2*xc-xp[0]+1e-3<max(max(2*xc-xp),max(xm)):
-        print("Intersection!!!")
+    if 2*xc-xp[0]+tol<max(max(2*xc-xp),max(xm)):
+        return True
+    else:
+        return False
 
-    fig, ax = plt.subplots()
     
-    ax.plot(x, y,'blue')
-    ax.plot(2*xc-x, 2*yc-y,'blue')
-    ax.plot(2*xc2-x, y,'blue')
-    ax.plot(2*xc2-2*xc+x, 2*yc-y,'blue')
-    
-    ax.plot(xp,yp,'red')
-    ax.plot(2*xc-xp, 2*yc-yp,'green')
-    ax.plot(2*xc2-xp, yp,'red')
-    ax.plot(2*xc2-2*xc+xp, 2*yc-yp,'green')
-    
-    ax.plot(xm,ym,'green')
-    ax.plot(2*xc-xm, 2*yc-ym,'red')
-    ax.plot(2*xc2-xm, ym,'green')
-    ax.plot(2*xc2-2*xc+xm, 2*yc-ym,'red')
-    
-    plt.title("D = "+str(int(D*1e6)/1e6))
-    # plt.xlim(np.min(xp)-1,np.max(xm)+1)
-    # plt.ylim(np.min(ym)-1,np.max(yp)+1)
-    plt.show()
+
 
 
 print("-------------above D_trg------------")
@@ -320,10 +302,7 @@ lms_opt2 = np.zeros_like(Ds2)
 s_opt2 = np.zeros_like(Ds2)
 y_init = np.zeros((7,sigma2.size))
 
-#D for cell shape
-Dx = 0.13
-ix = np.where(abs(Ds2 - Dx) == min(abs(Ds2-Dx)))[0]
-
+i_ints = []
 i=0
 for D in Ds2:   
     if i < 1:
@@ -347,9 +326,10 @@ for D in Ds2:
     mus_opt2[i] = np.mean(sol[3])
     s_opt2[i] = np.mean(sol[4])
     y_init = sol
-    
-    if D==Ds2[ix]:
-        shape2(sol[0],sol[1],lms_opt2[i],mus_opt2[i],s_opt2[i],D)
+
+    flag = intersect(sol[0],sol[1],lms_opt2[i],mus_opt2[i],s_opt2[i],D)
+    if flag == True:
+        i_ints.append(i)
     
     i += 1
 
@@ -364,6 +344,9 @@ plt.plot(Ds,lms_opt,'.-',label=r'below $D_{\Delta}$')
 plt.plot(Ds2,lms_opt2,'.-',label=r'above $D_{\Delta}$')
 plt.axvline(x=D_star,linestyle='--',c='black',linewidth=2,label=r'$D^*$')
 plt.axvline(x=D_trg,linestyle='--',c='red',linewidth=2,label=r'$D_{\Delta}$')
+if i_ints:
+    plt.axvline(x=Ds2[min(i_ints)],linestyle='--',c='green',linewidth=2,
+            label='Self-intersection')
 plt.xlabel("D")
 plt.ylabel(r"$\Lambda$")
 plt.xlim(0,Ds_f)
@@ -378,6 +361,9 @@ plt.plot(Ds,mus_opt,'.-',label=r'below $D_{\Delta}$')
 plt.plot(Ds2,mus_opt2,'.-',label=r'above $D_{\Delta}$')
 plt.axvline(x=D_star,linestyle='--',c='black',linewidth=2,label=r'$D^*$')
 plt.axvline(x=D_trg,linestyle='--',c='red',linewidth=2,label=r'$D_{\Delta}$')
+if i_ints:
+    plt.axvline(x=Ds2[min(i_ints)],linestyle='--',c='green',linewidth=2,
+            label='Self-intersection')
 plt.xlabel("D")
 plt.ylabel(r"$\mu$")
 # plt.ylim(0.0,0.04)
