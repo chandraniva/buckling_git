@@ -13,11 +13,14 @@ sigma = np.linspace(0,1,nodes)
 nodes2 = 1000
 sigma2 = np.linspace(0,1/2,nodes2)
 
+nodes3 = 1000
+sigma3 = np.linspace(0,1/2,nodes3)
+
 #parameters
 E = 15
 l0 = np.sqrt(18)
 Ds_i = 0
-Ds_f = 0.8
+Ds_f = 0.6
 l1,l2 = 0.995,1.015
 
     
@@ -242,12 +245,11 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
                       1/lamb])
     psi_max = roots[-1]
-    sig3 = np.linspace(0,s_star,500)
     
     ddpsi = 4*mu*E*E*np.sin(psi)*\
     (dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
     
-    phi1 = psi_max/2/E*np.ones_like(sig3)
+    phi1 = psi_max/2/E*np.ones_like(sigma3)
     phi2 = dpsi/2/E/(1-2*s_star)
     phi = np.concatenate((phi1,phi2),axis=None)
     
@@ -262,15 +264,15 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     dx = (f*np.cos(psi) - g*np.sin(psi))*(1-2*s_star)
     dy = (f*np.sin(psi) - g*np.cos(psi))*(1-2*s_star)
     
-    x1 = (f_max*np.sin(psi_max*sig3)/psi_max)/lamb*E/l0
-    y1 = (f_max*(1-np.cos(psi_max*sig3))/psi_max)/lamb*E/l0
+    x1 = (f_max*np.sin(psi_max*sigma3)/psi_max)/lamb*E/l0
+    y1 = (f_max*(1-np.cos(psi_max*sigma3))/psi_max)/lamb*E/l0
     x2 =  (f_max*Icos  + np.cumsum(dx)/nodes)/lamb*E/l0
     y2 =  (f_max*Isin  + np.cumsum(dy)/nodes)/lamb*E/l0
     
     x = np.concatenate((x1,x2),axis=None)
     y = np.concatenate((y1,y2),axis=None)
     
-    psi_i = np.concatenate((psi_max*sig3,psi),axis=None)
+    psi_i = np.concatenate((psi_max*sigma3,psi),axis=None)
     
     xp = x - l0*lamb/2*np.sin(psi_i)*np.cos(phi)
     xm = x + l0*lamb/2*np.sin(psi_i)*np.cos(phi)
@@ -281,7 +283,7 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     yc = y[-1]
     xc2 = max(2*xc-x)
     
-    # print(2*xc-xp[0])
+    print(xm.shape)
     # print(max(2*xc-xp))
     # print(max(xm))
     
@@ -321,7 +323,7 @@ s_opt2 = np.zeros_like(Ds2)
 y_init = np.zeros((7,sigma2.size))
 
 #D for cell shape
-Dx = 0.13
+Dx = 0.12
 ix = np.where(abs(Ds2 - Dx) == min(abs(Ds2-Dx)))[0]
 
 i=0

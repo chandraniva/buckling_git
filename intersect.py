@@ -13,15 +13,13 @@ sigma = np.linspace(0,1,nodes)
 nodes2 = 2000
 sigma2 = np.linspace(0,1/2,nodes2)
 
-nodes3 = 1000
-sigma3 = np.linspace(0,1/2,nodes3)
-
 #parameters
-E = 15
+E = 13
 l0 = np.sqrt(10)
 Ds_i = 0
-Ds_f = 0.5
-l1,l2 = 0.995,1.015
+Ds_f = 0.35
+
+Dx2 = 0.4
 
     
 def solve(y_init):
@@ -241,17 +239,17 @@ def solve2(y_init):
 
 
 def intersect(psi,dpsi,lamb,mu,s_star,D):
-    tol = 1e-4
+    tol = 1e-3
     
     roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
                       1/lamb])
     psi_max = roots[-1]
-    # sig3 = np.linspace(0,s_star,500)
+    sig3 = np.linspace(0,s_star,500)
     
     ddpsi = 4*mu*E*E*np.sin(psi)*\
     (dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
     
-    phi1 = psi_max/2/E*np.ones_like(sigma3)
+    phi1 = psi_max/2/E*np.ones_like(sig3)
     phi2 = dpsi/2/E/(1-2*s_star)
     phi = np.concatenate((phi1,phi2),axis=None)
     
@@ -266,15 +264,15 @@ def intersect(psi,dpsi,lamb,mu,s_star,D):
     dx = (f*np.cos(psi) - g*np.sin(psi))*(1-2*s_star)
     dy = (f*np.sin(psi) - g*np.cos(psi))*(1-2*s_star)
     
-    x1 = (f_max*np.sin(psi_max*sigma3)/psi_max)/lamb*E/l0
-    y1 = (f_max*(1-np.cos(psi_max*sigma3))/psi_max)/lamb*E/l0
+    x1 = (f_max*np.sin(psi_max*sig3)/psi_max)/lamb*E/l0
+    y1 = (f_max*(1-np.cos(psi_max*sig3))/psi_max)/lamb*E/l0
     x2 =  (f_max*Icos  + np.cumsum(dx)/nodes)/lamb*E/l0
     y2 =  (f_max*Isin  + np.cumsum(dy)/nodes)/lamb*E/l0
     
     x = np.concatenate((x1,x2),axis=None)
     y = np.concatenate((y1,y2),axis=None)
     
-    psi_i = np.concatenate((psi_max*sigma3,psi),axis=None)
+    psi_i = np.concatenate((psi_max*sig3,psi),axis=None)
     
     xp = x - l0*lamb/2*np.sin(psi_i)*np.cos(phi)
     xm = x + l0*lamb/2*np.sin(psi_i)*np.cos(phi)
@@ -284,11 +282,78 @@ def intersect(psi,dpsi,lamb,mu,s_star,D):
     xc = x[-1]
     yc = y[-1]
     
+        
+    
     if 2*xc-xp[0]+tol<max(max(2*xc-xp),max(xm)):
         return True
     else:
         return False
-
+    
+    
+def shape2(psi,dpsi,lamb,mu,s_star,D):
+    
+    roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
+                      1/lamb])
+    psi_max = roots[-1]
+    sig3 = np.linspace(0,s_star,500)
+    
+    ddpsi = 4*mu*E*E*np.sin(psi)*\
+    (dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
+    
+    phi1 = psi_max/2/E*np.ones_like(sig3)
+    phi2 = dpsi/2/E/(1-2*s_star)
+    phi = np.concatenate((phi1,phi2),axis=None)
+    
+    f = 1+dpsi**2/24/E**2/(1-2*s_star)**2
+    g = ddpsi/12/E**2/(1-2*s_star)**2
+    
+    f_max = 1 + psi_max**2/24/E**2
+    
+    Icos = np.sin(psi_max*s_star)/psi_max  
+    Isin = (1-np.cos(psi_max*s_star))/psi_max  
+    
+    dx = (f*np.cos(psi) - g*np.sin(psi))*(1-2*s_star)
+    dy = (f*np.sin(psi) - g*np.cos(psi))*(1-2*s_star)
+    
+    x1 = (f_max*np.sin(psi_max*sig3)/psi_max)/lamb*E/l0
+    y1 = (f_max*(1-np.cos(psi_max*sig3))/psi_max)/lamb*E/l0
+    x2 =  (f_max*Icos  + np.cumsum(dx)/nodes)/lamb*E/l0
+    y2 =  (f_max*Isin  + np.cumsum(dy)/nodes)/lamb*E/l0
+    
+    x = np.concatenate((x1,x2),axis=None)
+    y = np.concatenate((y1,y2),axis=None)
+    
+    psi_i = np.concatenate((psi_max*sig3,psi),axis=None)
+    
+    xp = x - l0*lamb/2*np.sin(psi_i)*np.cos(phi)
+    xm = x + l0*lamb/2*np.sin(psi_i)*np.cos(phi)
+    yp = y + l0*lamb/2*np.cos(psi_i)*np.cos(phi)
+    ym = y - l0*lamb/2*np.cos(psi_i)*np.cos(phi)
+    
+    xc = x[-1]
+    yc = y[-1]
+    xc2 = max(2*xc-x)
+    
+    
+    fig, ax = plt.subplots()
+    
+    ax.plot(x, y,'blue')
+    ax.plot(2*xc-x, 2*yc-y,'blue')
+    ax.plot(2*xc2-x, y,'blue')
+    ax.plot(2*xc2-2*xc+x, 2*yc-y,'blue')
+    
+    ax.plot(xp,yp,'red')
+    ax.plot(2*xc-xp, 2*yc-yp,'green')
+    ax.plot(2*xc2-xp, yp,'red')
+    ax.plot(2*xc2-2*xc+xp, 2*yc-yp,'green')
+    
+    ax.plot(xm,ym,'green')
+    ax.plot(2*xc-xm, 2*yc-ym,'red')
+    ax.plot(2*xc2-xm, ym,'green')
+    ax.plot(2*xc2-2*xc+xm, 2*yc-ym,'red')
+    
+    plt.title("D = "+str(int(D*1e6)/1e6))
+    plt.show()
     
 
 
@@ -302,10 +367,12 @@ lms_opt2 = np.zeros_like(Ds2)
 s_opt2 = np.zeros_like(Ds2)
 y_init = np.zeros((7,sigma2.size))
 
+
+ix = np.where(abs(Ds2 - Dx2) == min(abs(Ds2-Dx2)))[0]
 i_ints = []
 i=0
 for D in Ds2:   
-    if i < 1:
+    if i < 3:
         eps = np.sqrt(1 - 1.005*(1-D))
         psi_init = eps*2/(1-np.pi**2/4/E**2)* np.sin(np.pi*sigma2)
         dpsi_init = eps*2/(1-np.pi**2/4/E**2)* np.cos(np.pi*sigma2) * np.pi
@@ -314,8 +381,8 @@ for D in Ds2:
         y_init[1] = dpsi_init
         y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
         y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
-        y_init[4] = np.zeros_like(sigma2) + 1e-1
-        y_init[5] = 1.00*np.ones_like(sigma2)
+        y_init[4] = np.zeros_like(sigma2) + 0.1#1e-1
+        y_init[5] = 1.03*np.ones_like(sigma2)
         y_init[6] =  (eps*2/(1-np.pi**2/4/E**2)*np.pi)**2 \
                     *(np.pi*sigma2/2+np.sin(2*np.pi*sigma2)/4)/8/E**2
         
@@ -330,8 +397,22 @@ for D in Ds2:
     flag = intersect(sol[0],sol[1],lms_opt2[i],mus_opt2[i],s_opt2[i],D)
     if flag == True:
         i_ints.append(i)
+        
+    if D==Ds2[ix]:
+        shape2(sol[0],sol[1],lms_opt2[i],mus_opt2[i],s_opt2[i],D)
     
     i += 1
+
+D_intsct = Ds_f + 1e2
+if i_ints:
+    D_intsct = Ds2[min(i_ints)]
+
+np.save("data/lms_E="+str(E)+"_l0^2="+str(round(l0**2*10)/10)+
+        ".npy",np.vstack((Ds2,lms_opt2)))
+np.save("data/mus_E="+str(E)+"_l0^2="+str(round(l0**2*10)/10)+
+        ".npy",np.vstack((Ds2,mus_opt2)))
+np.save("data/intsct_E="+str(E)+"_l0^2="+str(round(l0**2*10)/10)+
+        ".npy",np.array(D_intsct))
 
 
 plt.plot(Ds2,s_opt2,'.-')
@@ -345,8 +426,8 @@ plt.plot(Ds2,lms_opt2,'.-',label=r'above $D_{\Delta}$')
 plt.axvline(x=D_star,linestyle='--',c='black',linewidth=2,label=r'$D^*$')
 plt.axvline(x=D_trg,linestyle='--',c='red',linewidth=2,label=r'$D_{\Delta}$')
 if i_ints:
-    plt.axvline(x=Ds2[min(i_ints)],linestyle='--',c='green',linewidth=2,
-            label='Self-intersection')
+    plt.axvline(x=D_intsct,linestyle='--',c='green',linewidth=2,
+                label='Self-intersection')
 plt.xlabel("D")
 plt.ylabel(r"$\Lambda$")
 plt.xlim(0,Ds_f)
