@@ -15,10 +15,9 @@ sigma2 = np.linspace(0,1/2,nodes2)
 
 #parameters
 E = 15
-l0 = np.sqrt(10)
+l0 = np.sqrt(15)
 Ds_i = 0
-Ds_f = 0.4
-l1,l2 = 0.995,1.015
+Ds_f = 0.2
 
     
 def solve(y_init):
@@ -81,7 +80,6 @@ D_star = 1-np.sqrt(1-z)
 
 i=0
 for D in Ds:   
-    print(D)
     if D<D_star:
         psi_init = np.zeros_like(sigma)
         dpsi_init = np.zeros_like(sigma)
@@ -217,8 +215,6 @@ y_init = np.zeros((7,sigma2.size))
 
 i=0
 for D in Ds2:   
-    print(D)
-
     if i < 1:
         eps = np.sqrt(1 - 1.005*(1-D))
         psi_init = eps*2/(1-np.pi**2/4/E**2)* np.sin(np.pi*sigma2)
@@ -244,36 +240,36 @@ for D in Ds2:
     i += 1
 
 
-plt.plot(Ds2,s_opt2,'.-')
-plt.ylabel(r"$s^*$")
-plt.xlabel("D")
-plt.show()
+# plt.plot(Ds2,s_opt2,'.-')
+# plt.ylabel(r"$s^*$")
+# plt.xlabel("D")
+# plt.show()
  
     
-plt.plot(Ds,lms_opt,'.-',label=r'below $D_{\Delta}$')
-plt.plot(Ds2,lms_opt2,'.-',label=r'above $D_{\Delta}$')
-plt.axvline(x=D_star,linestyle='--',c='black',linewidth=2,label=r'$D^*$')
-plt.axvline(x=D_trg,linestyle='--',c='red',linewidth=2,label=r'$D_{\Delta}$')
+plt.plot(Ds,lms_opt,'.-',label=r'Solution for D<$D_{\Delta}$')
+plt.plot(Ds2,lms_opt2,'.-',label=r'Solution for D>$D_{\Delta}$')
+plt.axvline(x=D_star,ymin=0.0,ymax=0.2,linestyle='--',c='black',linewidth=2,label=r'$D^*$')
+plt.axvline(x=D_trg,ymin=0.0,ymax=0.2,linestyle='--',c='red',linewidth=2,label=r'$D_{\Delta}$')
 plt.xlabel("D")
 plt.ylabel(r"$\Lambda$")
 plt.xlim(0,Ds_f)
-plt.ylim(1,1.015)
+# plt.ylim(1,1.015)
 plt.legend()
-plt.title("Using previous initial condition")
-plt.savefig("lambda_l0_"+str(round(l0**2))+".png",dpi=500)
+# plt.title("Using previous initial condition")
+plt.savefig("b1lambda_l0_"+str(round(l0**2))+".png",dpi=500)
 plt.show()
 
 
-plt.plot(Ds,mus_opt,'.-',label=r'below $D_{\Delta}$')
-plt.plot(Ds2,mus_opt2,'.-',label=r'above $D_{\Delta}$')
-plt.axvline(x=D_star,linestyle='--',c='black',linewidth=2,label=r'$D^*$')
-plt.axvline(x=D_trg,linestyle='--',c='red',linewidth=2,label=r'$D_{\Delta}$')
+plt.plot(Ds,mus_opt,'.-',label=r'Solution for D<$D_{\Delta}$')
+plt.plot(Ds2,mus_opt2,'.-',label=r'Solution for D>$D_{\Delta}$')
+plt.axvline(x=D_star,ymin=0.0,ymax=0.2,linestyle='--',c='black',linewidth=2,label=r'$D^*$')
+plt.axvline(x=D_trg,ymin=0.0,ymax=0.2,linestyle='--',c='red',linewidth=2,label=r'$D_{\Delta}$')
 plt.xlabel("D")
 plt.ylabel(r"$\mu$")
-plt.ylim(0.0,0.04)
+# plt.ylim(0.0,0.04)
 plt.legend()
-plt.title("Using previous initial condition")
-plt.savefig("mu_l0_"+str(round(l0**2))+".png",dpi=500)
+# plt.title("Using previous initial condition")
+plt.savefig("b1mu_l0_"+str(round(l0**2))+".png",dpi=500)
 plt.show()
 
 

@@ -15,11 +15,11 @@ sigma2 = np.linspace(0,1/2,nodes2)
 
 #parameters
 E = 15
-l0 = np.sqrt(12.550)
+l0 = np.sqrt(15)
 Ds_i = 0
-Ds_f = 0.3
+Ds_f = 0.4
 
-Dx2 = 0.21
+Dx2 = 0.4
 
     
 def solve(y_init):
@@ -353,6 +353,7 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     ax.plot(2*xc2-2*xc+xm, 2*yc-ym,'red')
     
     plt.title("D = "+str(int(D*1e6)/1e6))
+    plt.set_aspect(aspect=1)
     plt.show()
     
 

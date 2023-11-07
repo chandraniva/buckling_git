@@ -18,7 +18,7 @@ sigma2 = np.linspace(0,1/2,nodes2)
 E = 15
 l0 = np.sqrt(15)
 Ds_i = 0
-Ds_f = 0.5
+Ds_f = 0.2
 l1,l2 = 0.995,1.015
 
     
@@ -94,6 +94,8 @@ def shape1(psi,dpsi,lamb,mu,D):
     ax.plot(xm,ym,'green')
     ax.plot(2*xc-xm, ym,'green')
     plt.title("D = "+str(int(D*1e6)/1e6))
+    plt.savefig("shape_E="+str(E)+"_l0^2="+str(round(l0**2))+
+                "_D="+str(D)+".png",dpi=500)
     plt.show()
 
 
@@ -108,7 +110,7 @@ z = np.pi**2/4/E**2
 D_star = 1-np.sqrt(1-z)
 
 #D for cell shape 
-Dx = 0.05
+Dx = 0.1
 ix = np.where(abs(Ds - Dx) == min(abs(Ds-Dx)))[0]
 
 i=0
@@ -308,6 +310,8 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     plt.title("D = "+str(int(D*1e6)/1e6))
     # plt.xlim(np.min(xp)-1,np.max(xm)+1)
     # plt.ylim(np.min(ym)-1,np.max(yp)+1)
+    plt.savefig("shape_E="+str(E)+"_l0^2="+str(round(l0**2))+
+                "_D="+str(D)+".png",dpi=500)
     plt.show()
 
 
@@ -321,7 +325,7 @@ s_opt2 = np.zeros_like(Ds2)
 y_init = np.zeros((7,sigma2.size))
 
 #D for cell shape
-Dx = 0.4
+Dx = 0.2
 ix = np.where(abs(Ds2 - Dx) == min(abs(Ds2-Dx)))[0]
 
 i=0
