@@ -13,14 +13,12 @@ sigma = np.linspace(0,1,nodes)
 nodes2 = 1000
 sigma2 = np.linspace(0,1/2,nodes2)
 
-nodes3 = 1000
-sigma3 = np.linspace(0,1/2,nodes3)
 
 #parameters
 E = 15
-l0 = np.sqrt(18)
+l0 = np.sqrt(15)
 Ds_i = 0
-Ds_f = 0.6
+Ds_f = 0.5
 l1,l2 = 0.995,1.015
 
     
@@ -245,7 +243,7 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
                       1/lamb])
     psi_max = roots[-1]
-    
+    sigma3 = np.linspace(0,s_star,500)
     ddpsi = 4*mu*E*E*np.sin(psi)*\
     (dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
     
@@ -323,7 +321,7 @@ s_opt2 = np.zeros_like(Ds2)
 y_init = np.zeros((7,sigma2.size))
 
 #D for cell shape
-Dx = 0.12
+Dx = 0.4
 ix = np.where(abs(Ds2 - Dx) == min(abs(Ds2-Dx)))[0]
 
 i=0

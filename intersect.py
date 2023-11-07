@@ -14,12 +14,12 @@ nodes2 = 2000
 sigma2 = np.linspace(0,1/2,nodes2)
 
 #parameters
-E = 13
-l0 = np.sqrt(10)
+E = 15
+l0 = np.sqrt(12.550)
 Ds_i = 0
-Ds_f = 0.35
+Ds_f = 0.3
 
-Dx2 = 0.4
+Dx2 = 0.21
 
     
 def solve(y_init):
@@ -407,11 +407,11 @@ D_intsct = Ds_f + 1e2
 if i_ints:
     D_intsct = Ds2[min(i_ints)]
 
-np.save("data/lms_E="+str(E)+"_l0^2="+str(round(l0**2*10)/10)+
+np.save("data/lms_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
         ".npy",np.vstack((Ds2,lms_opt2)))
-np.save("data/mus_E="+str(E)+"_l0^2="+str(round(l0**2*10)/10)+
+np.save("data/mus_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
         ".npy",np.vstack((Ds2,mus_opt2)))
-np.save("data/intsct_E="+str(E)+"_l0^2="+str(round(l0**2*10)/10)+
+np.save("data/intsct_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
         ".npy",np.array(D_intsct))
 
 
