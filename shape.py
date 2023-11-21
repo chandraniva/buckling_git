@@ -94,8 +94,9 @@ def shape1(psi,dpsi,lamb,mu,D):
     ax.plot(xm,ym,'green')
     ax.plot(2*xc-xm, ym,'green')
     plt.title("D = "+str(int(D*1e6)/1e6))
-    plt.savefig("shape_E="+str(E)+"_l0^2="+str(round(l0**2))+
-                "_D="+str(D)+".png",dpi=500)
+    plt.axis('square')
+    # plt.savefig("shape_E="+str(E)+"_l0^2="+str(round(l0**2))+
+    #             "_D="+str(D)+".png",dpi=500)
     plt.show()
 
 
@@ -310,8 +311,9 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     plt.title("D = "+str(int(D*1e6)/1e6))
     # plt.xlim(np.min(xp)-1,np.max(xm)+1)
     # plt.ylim(np.min(ym)-1,np.max(yp)+1)
-    plt.savefig("shape_E="+str(E)+"_l0^2="+str(round(l0**2))+
-                "_D="+str(D)+".png",dpi=500)
+    plt.axis('square')
+    # plt.savefig("shape_E="+str(E)+"_l0^2="+str(round(l0**2))+
+    #             "_D="+str(D)+".png",dpi=500)
     plt.show()
 
 

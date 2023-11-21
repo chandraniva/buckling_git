@@ -9,17 +9,24 @@ startTime = datetime.now()
 
 nodes = 1000
 sigma = np.linspace(0,1,nodes)
+stepsigma = 1/nodes
 
-nodes2 = 2000
+nodes2 = 1000
 sigma2 = np.linspace(0,1/2,nodes2)
+stepsigma2 = 0.5/nodes2
 
 #parameters
 E = 15
-l0 = np.sqrt(15)
+l0 = np.sqrt(7)
 Ds_i = 0
-Ds_f = 0.4
+Ds_f = 0.6
 
-Dx2 = 0.4
+#D for cell shape 
+Dx1 = 0.1
+Dx2 = 0.35
+
+#intersection tolerance
+tol=1e-3*2
 
     
 def solve(y_init):
@@ -74,10 +81,13 @@ def shape1(psi,dpsi,lamb,mu,D):
     phi = dpsi/2/E
     f = 1+dpsi**2/24/E**2
     g = ddpsi/12/E**2 
+    
     dx = (f*np.cos(psi) - g*np.sin(psi))/lamb*E/l0
-    dy = (f*np.sin(psi) - g*np.cos(psi))/lamb*E/l0
-    x =  np.cumsum(dx)/nodes 
-    y =  np.cumsum(dy)/nodes
+    dy = (f*np.sin(psi) + g*np.cos(psi))/lamb*E/l0
+    
+    x =  np.cumsum(dx)*stepsigma 
+    y =  np.cumsum(dy)*stepsigma
+    
     xp = x - l0*lamb/2*np.sin(psi)*np.cos(phi)
     xm = x + l0*lamb/2*np.sin(psi)*np.cos(phi)
     yp = y + l0*lamb/2*np.cos(psi)*np.cos(phi)
@@ -87,14 +97,61 @@ def shape1(psi,dpsi,lamb,mu,D):
     yc = max(y)
     
     fig, ax = plt.subplots()
+    ax.set(adjustable='box', aspect='equal')
+
+    
     ax.plot(x, y,'blue')
     ax.plot(2*xc-x, y,'blue')
     ax.plot(xp,yp,'red')
     ax.plot(2*xc-xp, yp,'red')
     ax.plot(xm,ym,'green')
     ax.plot(2*xc-xm, ym,'green')
-    plt.title("D = "+str(int(D*1e6)/1e6))
+    
+    plt.xlim(-2,E/l0*2+2)
+    plt.ylim(-4,8)
+    
+    plt.title(r"Below $D_{\Delta}$; D = "+str(int(D*1e6)/1e6))
     plt.show()
+    
+def intersect1(psi,dpsi,lamb,mu):
+    ddpsi = 4*mu*E**2*np.sin(psi)/(1+mu*np.cos(psi))*(dpsi**2/8/E**2 - 1)
+    phi = dpsi/2/E
+    f = 1+dpsi**2/24/E**2
+    g = ddpsi/12/E**2 
+    
+    dx = (f*np.cos(psi) - g*np.sin(psi))/lamb*E/l0
+    dy = (f*np.sin(psi) + g*np.cos(psi))/lamb*E/l0
+    
+    x =  np.cumsum(dx)*stepsigma 
+    y =  np.cumsum(dy)*stepsigma
+    
+    xp = x - l0*lamb/2*np.sin(psi)*np.cos(phi)
+    xm = x + l0*lamb/2*np.sin(psi)*np.cos(phi)
+    yp = y + l0*lamb/2*np.cos(psi)*np.cos(phi)
+    ym = y - l0*lamb/2*np.cos(psi)*np.cos(phi)
+    
+    xc = max(x)
+    yc = max(y)
+    
+    if max(xm)-tol>min(2*xc-xm):
+        return True
+    else:
+        return False
+    
+def amplitude1(psi,dpsi,lamb,mu,D):
+    ddpsi = 4*mu*E**2*np.sin(psi)/(1+mu*np.cos(psi))*(dpsi**2/8/E**2 - 1)
+    f = 1+dpsi**2/24/E**2
+    g = ddpsi/12/E**2 
+    dx = (f*np.cos(psi) - g*np.sin(psi))/lamb*E/l0
+    dy = (f*np.sin(psi) + g*np.cos(psi))/lamb*E/l0
+    x =  np.cumsum(dx)/nodes 
+    y =  np.cumsum(dy)/nodes
+    
+    xc = max(x)
+    yc = max(y)
+    
+    return yc
+
 
 
 global D
@@ -102,15 +159,15 @@ global D
 Ds = np.linspace(Ds_i,Ds_f,100)
 mus_opt = np.zeros_like(Ds)
 lms_opt = np.zeros_like(Ds)
+amp1 = np.zeros_like(Ds)
 x_plus_dot = np.zeros_like(Ds)
 y_init = np.zeros((6,sigma.size))
 z = np.pi**2/4/E**2
 D_star = 1-np.sqrt(1-z)
 
-#D for cell shape 
-Dx = 0.05
-ix = np.where(abs(Ds - Dx) == min(abs(Ds-Dx)))[0]
 
+ix = np.where(abs(Ds - Dx1) == min(abs(Ds-Dx1)))[0]
+i_ints1 = []
 i=0
 for D in Ds:   
     if D<D_star:
@@ -150,11 +207,15 @@ for D in Ds:
     
     y_init = sol
     
+    flag = intersect1(sol[0],sol[1],lms_opt[i],mus_opt[i])
+    if flag == True:
+        i_ints1.append(i)
+    
     if D==Ds[ix]:
         shape1(sol[0],sol[1],lms_opt[i],mus_opt[i],D)
     
+    amp1[i] = amplitude1(sol[0],sol[1],lms_opt[i],mus_opt[i],D)
     i += 1
-
 
 plt.plot(Ds,x_plus_dot,'.-')
 
@@ -192,7 +253,7 @@ def solve2(y_init):
         dmu = np.zeros_like(psi)
         ds_star = np.zeros_like(psi)
         dlamb = np.zeros_like(psi)
-        dJ = dpsi**2/8/E**2*(1-2*s_star)
+        dJ = dpsi**2/8/E**2/(1-2*s_star)
         
         return np.vstack((dpsi,ddpsi,dI,dmu,ds_star,dlamb,dJ))
         
@@ -238,13 +299,12 @@ def solve2(y_init):
     return [psi,dpsi,I,mu,s_star,lamb,J]
 
 
-def intersect(psi,dpsi,lamb,mu,s_star,D):
-    tol = 1e-3
+def intersect2(psi,dpsi,lamb,mu,s_star,D):
     
     roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
                       1/lamb])
     psi_max = roots[-1]
-    sig3 = np.linspace(0,s_star,500)
+    sig3 = np.linspace(0,s_star,100)
     
     ddpsi = 4*mu*E*E*np.sin(psi)*\
     (dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
@@ -258,16 +318,15 @@ def intersect(psi,dpsi,lamb,mu,s_star,D):
     
     f_max = 1 + psi_max**2/24/E**2
     
-    Icos = np.sin(psi_max*s_star)/psi_max  
-    Isin = (1-np.cos(psi_max*s_star))/psi_max  
-    
+
     dx = (f*np.cos(psi) - g*np.sin(psi))*(1-2*s_star)
-    dy = (f*np.sin(psi) - g*np.cos(psi))*(1-2*s_star)
+    dy = (f*np.sin(psi) + g*np.cos(psi))*(1-2*s_star)
     
-    x1 = (f_max*np.sin(psi_max*sig3)/psi_max)/lamb*E/l0
-    y1 = (f_max*(1-np.cos(psi_max*sig3))/psi_max)/lamb*E/l0
-    x2 =  (f_max*Icos  + np.cumsum(dx)/nodes)/lamb*E/l0
-    y2 =  (f_max*Isin  + np.cumsum(dy)/nodes)/lamb*E/l0
+    x1 = (f_max*np.sin(psi_max*sig3)/psi_max)/lamb*(E/l0)
+    y1 = (f_max*(1-np.cos(psi_max*sig3))/psi_max)/lamb*(E/l0)
+    
+    x2 =  x1[-1] + (np.cumsum(dx)*stepsigma2)/lamb*(E/l0)
+    y2 =  y1[-1] + (np.cumsum(dy)*stepsigma2)/lamb*(E/l0)
     
     x = np.concatenate((x1,x2),axis=None)
     y = np.concatenate((y1,y2),axis=None)
@@ -281,21 +340,55 @@ def intersect(psi,dpsi,lamb,mu,s_star,D):
     
     xc = x[-1]
     yc = y[-1]
-    
-        
-    
-    if 2*xc-xp[0]+tol<max(max(2*xc-xp),max(xm)):
+    xc2 = 2*xc    
+    # print(D,max(max(2*xc-xp),max(xm)),min(min(2*xc2-xm),min(2*xc2-2*xc+xp)))
+    if max(max(2*xc-xp),max(xm))-tol>min(min(2*xc2-xm),min(2*xc2-2*xc+xp)):
         return True
     else:
         return False
     
+    
+    
+def amplitude2(psi,dpsi,lamb,mu,s_star,D):
+    
+    roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
+                      1/lamb])
+    psi_max = roots[-1]
+    sig3 = np.linspace(0,s_star,100)
+    
+    ddpsi = 4*mu*E*E*np.sin(psi)*\
+    (dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
+    
+    f = 1+dpsi**2/24/E**2/(1-2*s_star)**2
+    g = ddpsi/12/E**2/(1-2*s_star)**2
+    
+    f_max = 1 + psi_max**2/24/E**2
+    
+    
+    dx = (f*np.cos(psi) - g*np.sin(psi))*(1-2*s_star)
+    dy = (f*np.sin(psi) + g*np.cos(psi))*(1-2*s_star)
+    
+    x1 = (f_max*np.sin(psi_max*sig3)/psi_max)/lamb*(E/l0)
+    y1 = (f_max*(1-np.cos(psi_max*sig3))/psi_max)/lamb*(E/l0)
+    
+    x2 =  x1[-1] + (np.cumsum(dx)*stepsigma2)/lamb*(E/l0)
+    y2 =  y1[-1] + (np.cumsum(dy)*stepsigma2)/lamb*(E/l0)
+    
+    x = np.concatenate((x1,x2),axis=None)
+    y = np.concatenate((y1,y2),axis=None)
+    
+    xc = x[-1]
+    yc = y[-1]
+    
+    return 2*yc
+
     
 def shape2(psi,dpsi,lamb,mu,s_star,D):
     
     roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
                       1/lamb])
     psi_max = roots[-1]
-    sig3 = np.linspace(0,s_star,500)
+    sig3 = np.linspace(0,s_star,100)
     
     ddpsi = 4*mu*E*E*np.sin(psi)*\
     (dpsi**2/8/E**2/(1-2*s_star)**2 - 1)*(1-2*s_star)**2/(1+mu*np.cos(psi))
@@ -309,16 +402,15 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     
     f_max = 1 + psi_max**2/24/E**2
     
-    Icos = np.sin(psi_max*s_star)/psi_max  
-    Isin = (1-np.cos(psi_max*s_star))/psi_max  
-    
+
     dx = (f*np.cos(psi) - g*np.sin(psi))*(1-2*s_star)
-    dy = (f*np.sin(psi) - g*np.cos(psi))*(1-2*s_star)
+    dy = (f*np.sin(psi) + g*np.cos(psi))*(1-2*s_star)
     
-    x1 = (f_max*np.sin(psi_max*sig3)/psi_max)/lamb*E/l0
-    y1 = (f_max*(1-np.cos(psi_max*sig3))/psi_max)/lamb*E/l0
-    x2 =  (f_max*Icos  + np.cumsum(dx)/nodes)/lamb*E/l0
-    y2 =  (f_max*Isin  + np.cumsum(dy)/nodes)/lamb*E/l0
+    x1 = (f_max*np.sin(psi_max*sig3)/psi_max)/lamb*(E/l0)
+    y1 = (f_max*(1-np.cos(psi_max*sig3))/psi_max)/lamb*(E/l0)
+    
+    x2 =  x1[-1] + (np.cumsum(dx)*stepsigma2)/lamb*(E/l0)
+    y2 =  y1[-1] + (np.cumsum(dy)*stepsigma2)/lamb*(E/l0)
     
     x = np.concatenate((x1,x2),axis=None)
     y = np.concatenate((y1,y2),axis=None)
@@ -330,12 +422,16 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     yp = y + l0*lamb/2*np.cos(psi_i)*np.cos(phi)
     ym = y - l0*lamb/2*np.cos(psi_i)*np.cos(phi)
     
+
+    
     xc = x[-1]
     yc = y[-1]
-    xc2 = max(2*xc-x)
+    xc2 = 2*xc
     
     
     fig, ax = plt.subplots()
+    ax.set(adjustable='box', aspect='equal')
+    
     
     ax.plot(x, y,'blue')
     ax.plot(2*xc-x, 2*yc-y,'blue')
@@ -352,8 +448,18 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     ax.plot(2*xc2-xm, ym,'green')
     ax.plot(2*xc2-2*xc+xm, 2*yc-ym,'red')
     
-    plt.title("D = "+str(int(D*1e6)/1e6))
-    plt.set_aspect(aspect=1)
+    plt.title(r"Above $D_{\Delta}$; D = "+str(int(D*1e6)/1e6))
+    
+    # plt.xlim(-2,E/l0*2+2)
+    # plt.ylim(-4,8)
+    # plt.savefig("shape_D="+str(int(D*1e3)/1e3)+"_E="+str(E)+"_l0^2="+
+    #             str(round(l0**2*1000)/1000)+".png",dpi=500)
+    
+    # plt.xlim(3.265,3.28)
+    # plt.ylim(1.245,1.26)
+    # plt.savefig("zoomed_shape_D="+str(int(D*1e3)/1e3)+"_E="+str(E)+"_l0^2="+
+    #             str(round(l0**2*1000)/1000)+".png",dpi=500)
+    
     plt.show()
     
 
@@ -367,6 +473,7 @@ mus_opt2 = np.zeros_like(Ds2)
 lms_opt2 = np.zeros_like(Ds2)
 s_opt2 = np.zeros_like(Ds2)
 y_init = np.zeros((7,sigma2.size))
+amp2 = np.zeros_like(Ds2)
 
 
 ix = np.where(abs(Ds2 - Dx2) == min(abs(Ds2-Dx2)))[0]
@@ -383,7 +490,7 @@ for D in Ds2:
         y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
         y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
         y_init[4] = np.zeros_like(sigma2) + 0.1#1e-1
-        y_init[5] = 1.03*np.ones_like(sigma2)
+        y_init[5] = 1.05*np.ones_like(sigma2)
         y_init[6] =  (eps*2/(1-np.pi**2/4/E**2)*np.pi)**2 \
                     *(np.pi*sigma2/2+np.sin(2*np.pi*sigma2)/4)/8/E**2
         
@@ -395,7 +502,8 @@ for D in Ds2:
     s_opt2[i] = np.mean(sol[4])
     y_init = sol
 
-    flag = intersect(sol[0],sol[1],lms_opt2[i],mus_opt2[i],s_opt2[i],D)
+    amp2[i] = amplitude2(sol[0],sol[1],lms_opt2[i],mus_opt2[i],s_opt2[i],D)
+    flag = intersect2(sol[0],sol[1],lms_opt2[i],mus_opt2[i],s_opt2[i],D)
     if flag == True:
         i_ints.append(i)
         
@@ -404,16 +512,30 @@ for D in Ds2:
     
     i += 1
 
-D_intsct = Ds_f + 1e2
+D_intsct2 = Ds_f + 1e2
 if i_ints:
-    D_intsct = Ds2[min(i_ints)]
+    D_intsct2 = Ds2[min(i_ints)]
+
+D_intsct1 = Ds_f + 1e2
+if i_ints1:
+    D_intsct1 = Ds[min(i_ints1)]
+
+D_intsct= D_intsct2
+if D_intsct1<D_trg:   
+    D_intsct = D_intsct1
+
+
 
 np.save("data/lms_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
-        ".npy",np.vstack((Ds2,lms_opt2)))
+        "_tol="+str(tol)+".npy",np.vstack((Ds2,lms_opt2)))
 np.save("data/mus_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
-        ".npy",np.vstack((Ds2,mus_opt2)))
+        "_tol="+str(tol)+".npy",np.vstack((Ds2,mus_opt2)))
 np.save("data/intsct_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
-        ".npy",np.array(D_intsct))
+        "_tol="+str(tol)+".npy",np.array(D_intsct))
+np.save("data/amp_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
+        "_tol="+str(tol)+".npy",np.vstack((Ds2,amp2)))
+np.save("data/amp1_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
+        "_tol="+str(tol)+".npy",np.vstack((Ds,amp1)))
 
 
 plt.plot(Ds2,s_opt2,'.-')
@@ -421,7 +543,7 @@ plt.ylabel(r"$s^*$")
 plt.xlabel("D")
 plt.show()
  
-    
+
 plt.plot(Ds,lms_opt,'.-',label=r'below $D_{\Delta}$')
 plt.plot(Ds2,lms_opt2,'.-',label=r'above $D_{\Delta}$')
 plt.axvline(x=D_star,linestyle='--',c='black',linewidth=2,label=r'$D^*$')
@@ -444,7 +566,7 @@ plt.plot(Ds2,mus_opt2,'.-',label=r'above $D_{\Delta}$')
 plt.axvline(x=D_star,linestyle='--',c='black',linewidth=2,label=r'$D^*$')
 plt.axvline(x=D_trg,linestyle='--',c='red',linewidth=2,label=r'$D_{\Delta}$')
 if i_ints:
-    plt.axvline(x=Ds2[min(i_ints)],linestyle='--',c='green',linewidth=2,
+    plt.axvline(x=D_intsct,linestyle='--',c='green',linewidth=2,
             label='Self-intersection')
 plt.xlabel("D")
 plt.ylabel(r"$\mu$")
@@ -455,8 +577,18 @@ plt.title("Using previous initial condition")
 plt.show()
 
 
-# plt.plot(Ds2,s_opt2,'o-')
-# plt.show()
+plt.plot(Ds2,s_opt2,'o-')
+plt.show()
+
+plt.plot(Ds,amp1,'.-')
+plt.plot(Ds2,amp2,'.-')
+if i_ints:
+    plt.axvline(x=D_intsct,linestyle='--',c='green',linewidth=2,
+            label='Self-intersection')
+plt.xlabel("D")
+plt.ylabel("Amplitude")
+plt.show()
+
 
 
 print("Execution time:",datetime.now() - startTime)
