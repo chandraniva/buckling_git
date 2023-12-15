@@ -16,17 +16,17 @@ sigma2 = np.linspace(0,1/2,nodes2)
 stepsigma2 = 0.5/nodes2
 
 #parameters
-E = 15
-l0 = np.sqrt(7)
+E = 100
+l0 = np.sqrt(85.7)
 Ds_i = 0
-Ds_f = 0.6
+Ds_f = 0.3
 
 #D for cell shape 
 Dx1 = 0.1
-Dx2 = 0.35
+Dx2 = 0.22
 
 #intersection tolerance
-tol=1e-3*2
+tol=1e-3*3
 
     
 def solve(y_init):
@@ -181,7 +181,7 @@ for D in Ds:
         y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma)
         y_init[4] = 1/(1-D)*np.ones_like(psi_init)
         y_init[5] = dpsi_init
-    elif D>D_star and D<D_star+0.01:
+    elif D>D_star and D<D_star+0.1:
         eps = np.sqrt(1 - 1*(1-D))
         psi_init = eps*2/(1-np.pi**2/4/E**2)* np.sin(np.pi*sigma)
         dpsi_init = eps*2/(1-np.pi**2/4/E**2)* np.cos(np.pi*sigma) * np.pi
@@ -217,7 +217,10 @@ for D in Ds:
     amp1[i] = amplitude1(sol[0],sol[1],lms_opt[i],mus_opt[i],D)
     i += 1
 
+
 plt.plot(Ds,x_plus_dot,'.-')
+plt.xlabel("D")
+plt.ylabel(r"$\dot{x}_+$")
 
 f = interpolate.UnivariateSpline(Ds, x_plus_dot, s=0)
 yToFind = 0
@@ -388,6 +391,7 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     roots = np.roots([l0**2 * lamb/16/E**3, 1/24/lamb/E**2, -l0**2 *lamb/2/E,
                       1/lamb])
     psi_max = roots[-1]
+    print("psi_max=",psi_max)
     sig3 = np.linspace(0,s_star,100)
     
     ddpsi = 4*mu*E*E*np.sin(psi)*\
@@ -434,19 +438,19 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     
     
     ax.plot(x, y,'blue')
-    ax.plot(2*xc-x, 2*yc-y,'blue')
-    ax.plot(2*xc2-x, y,'blue')
-    ax.plot(2*xc2-2*xc+x, 2*yc-y,'blue')
+    # ax.plot(2*xc-x, 2*yc-y,'blue')
+    # ax.plot(2*xc2-x, y,'blue')
+    # ax.plot(2*xc2-2*xc+x, 2*yc-y,'blue')
     
     ax.plot(xp,yp,'red')
-    ax.plot(2*xc-xp, 2*yc-yp,'green')
-    ax.plot(2*xc2-xp, yp,'red')
-    ax.plot(2*xc2-2*xc+xp, 2*yc-yp,'green')
+    # ax.plot(2*xc-xp, 2*yc-yp,'green')
+    # ax.plot(2*xc2-xp, yp,'red')
+    # ax.plot(2*xc2-2*xc+xp, 2*yc-yp,'green')
     
     ax.plot(xm,ym,'green')
-    ax.plot(2*xc-xm, 2*yc-ym,'red')
-    ax.plot(2*xc2-xm, ym,'green')
-    ax.plot(2*xc2-2*xc+xm, 2*yc-ym,'red')
+    # ax.plot(2*xc-xm, 2*yc-ym,'red')
+    # ax.plot(2*xc2-xm, ym,'green')
+    # ax.plot(2*xc2-2*xc+xm, 2*yc-ym,'red')
     
     plt.title(r"Above $D_{\Delta}$; D = "+str(int(D*1e6)/1e6))
     
@@ -460,6 +464,15 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
     # plt.savefig("zoomed_shape_D="+str(int(D*1e3)/1e3)+"_E="+str(E)+"_l0^2="+
     #             str(round(l0**2*1000)/1000)+".png",dpi=500)
     
+    
+    plt.show()
+    
+    plt.plot(psi)
+    plt.title("psi")
+    plt.show()
+    
+    plt.plot(phi)
+    plt.title("phi")
     plt.show()
     
 
@@ -481,7 +494,7 @@ i_ints = []
 i=0
 for D in Ds2:   
     if i < 3:
-        eps = np.sqrt(1 - 1.005*(1-D))
+        eps = np.sqrt(1 - 1*(1-D))
         psi_init = eps*2/(1-np.pi**2/4/E**2)* np.sin(np.pi*sigma2)
         dpsi_init = eps*2/(1-np.pi**2/4/E**2)* np.cos(np.pi*sigma2) * np.pi
         
@@ -490,7 +503,7 @@ for D in Ds2:
         y_init[2] = np.cos(psi_init)*(1+dpsi_init**2/8/E**2)
         y_init[3] = np.pi**2/4/E**2/(1-np.pi**2/4/E**2)*np.ones_like(sigma2)
         y_init[4] = np.zeros_like(sigma2) + 0.1#1e-1
-        y_init[5] = 1.05*np.ones_like(sigma2)
+        y_init[5] = 1.10*np.ones_like(sigma2)
         y_init[6] =  (eps*2/(1-np.pi**2/4/E**2)*np.pi)**2 \
                     *(np.pi*sigma2/2+np.sin(2*np.pi*sigma2)/4)/8/E**2
         
@@ -536,6 +549,8 @@ np.save("data/amp_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
         "_tol="+str(tol)+".npy",np.vstack((Ds2,amp2)))
 np.save("data/amp1_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
         "_tol="+str(tol)+".npy",np.vstack((Ds,amp1)))
+np.save("data/s_star_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
+        "_tol="+str(tol)+".npy",np.vstack((Ds2,s_opt2)))
 
 
 plt.plot(Ds2,s_opt2,'.-')
@@ -577,9 +592,6 @@ plt.title("Using previous initial condition")
 plt.show()
 
 
-plt.plot(Ds2,s_opt2,'o-')
-plt.show()
-
 plt.plot(Ds,amp1,'.-')
 plt.plot(Ds2,amp2,'.-')
 if i_ints:
@@ -587,8 +599,17 @@ if i_ints:
             label='Self-intersection')
 plt.xlabel("D")
 plt.ylabel("Amplitude")
+plt.title(r"$\Xi$="+str(E)+str("$; l_0^2=$")+str(round(l0**2*10000)/10000))
 plt.show()
 
+
+plt.plot(Ds2[1:],amp2[1:]-amp2[:-1],'.-')
+plt.show()
+
+amp_diff = np.abs(amp2[1:]-amp2[:-1])
+
+print("Bifurcation at D=",Ds2[np.where(amp_diff==max(amp_diff))[0]])
+print(Ds2[0],D_intsct)
 
 
 print("Execution time:",datetime.now() - startTime)

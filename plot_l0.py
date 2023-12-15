@@ -11,7 +11,7 @@ Ds_i = 0
 Ds_f = 0.6
 l0s = np.sqrt(np.arange(7,18,1))
 
-tol = 1e-3*2
+tol = 1e-3*3
 
 """-----------lambda------------"""
 
@@ -23,19 +23,7 @@ for l0 in l0s:
     if Di<Ds_f:
         plt.scatter(Di,lms2[np.where(Ds2==Di)[0]],s=50,c='cyan',zorder=1)
 
-# Ds2,lms2a = np.load("data/lms_E="+str(E)+"_l0^2=12.552.npy")
-# Dia = np.load("data/intsct_E="+str(E)+"_l0^2=12.552.npy")
 
-# plt.plot(Ds2,lms2a,'.-',c='green',zorder=0)#,label=r'$l_0^2=12.551$',zorder=0)
-# if Dia<Ds_f:
-#     plt.scatter(Dia,lms2a[np.where(Ds2==Dia)[0]],s=50,c='red',zorder=1)
-    
-# Ds2,lms2b = np.load("data/lms_E="+str(E)+"_l0^2=12.56.npy")
-# Dib = np.load("data/intsct_E="+str(E)+"_l0^2=12.56.npy")
-
-# plt.plot(Ds2,lms2b,'.-',c='green')#, label=r'$l_0^2=12.553$',zorder=0)
-# if Dib<Ds_f:
-#     plt.scatter(Dib,lms2b[np.where(Ds2==Dib)[0]],s=50,c='red',zorder=1)
     
     
 plt.xlabel("D")
@@ -58,19 +46,7 @@ for l0 in l0s:
         plt.scatter(Di,mus2[np.where(Ds2==Di)[0]],s=50,c='cyan',zorder=1)
         
         
-# Ds2,mus2a = np.load("data/mus_E="+str(E)+"_l0^2=12.552.npy")
-# Dia = np.load("data/intsct_E="+str(E)+"_l0^2=12.552.npy")
 
-# plt.plot(Ds2,mus2a,'.-',c='C0',zorder=0)#,label=r'$l_0^2=12.551$',zorder=0)
-# if Dia<Ds_f:
-#     plt.scatter(Dia,mus2a[np.where(Ds2==Dia)[0]],s=50,c='red',zorder=1)
-    
-# Ds2,mus2b = np.load("data/mus_E="+str(E)+"_l0^2=12.56.npy")
-# Dib = np.load("data/intsct_E="+str(E)+"_l0^2=12.56.npy")
-
-# plt.plot(Ds2,mus2b,'.-',c='C1')#,label=r'$l_0^2=12.553$',zorder=0)
-# if Dib<Ds_f:
-#     plt.scatter(Dib,mus2b[np.where(Ds2==Dib)[0]],s=50,c='red',zorder=1)
     
 
 plt.xlabel("D")
@@ -101,19 +77,7 @@ for l0 in l0s:
     i+=1
     
     
-# Ds2,amp2a = np.load("data/amp_E="+str(E)+"_l0^2=12.552.npy")
-# Dia = np.load("data/intsct_E="+str(E)+"_l0^2=12.552.npy")
 
-# plt.plot(Ds2,amp2a,'.-',c='C0',zorder=0)#,label=r'$l_0^2=12.551$',zorder=0)
-# if Dia<Ds_f:
-#     plt.scatter(Dia,amp2a[np.where(Ds2==Dia)[0]],s=50,c='red',zorder=1)
-    
-# Ds2,amp2b = np.load("data/amp_E="+str(E)+"_l0^2=12.56.npy")
-# Dib = np.load("data/intsct_E="+str(E)+"_l0^2=12.56.npy")
-
-# plt.plot(Ds2,amp2b,'.-',c='C0')#,label=r'$l_0^2=12.553$',zorder=0)
-# if Dib<Ds_f:
-#     plt.scatter(Dib,amp2b[np.where(Ds2==Dib)[0]],s=50,c='red',zorder=1)
     
 plt.xlabel("D")
 plt.ylabel("Buckling amplitude")
