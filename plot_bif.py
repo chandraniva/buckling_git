@@ -6,18 +6,19 @@ startTime = datetime.now()
 
 
 Ds_i = 0
-Ds_f = 0.4
+Ds_f = 0.35
 
 D_bif = 0.213
 
 tol = 1e-3*3
 
 params = [[10,8.14],[10,8.13],[15,12.59],[15,12.62],[25,21.42],[25,21.41],
-          [100,85.7],[100,85.8]]
+          [100,85.6],[100,85.8]]
 
 
 """---------------------- Lambda ------------------------"""
 
+# plt.figure(figsize=(6,4))
 for p in params:
     E, l0_sq = p
         
@@ -35,16 +36,18 @@ for p in params:
     # if Di<Ds_f:
     #     plt.scatter(Di,lms2[np.where(Ds2==Di)[0]],s=50,c='red',zorder=1)
 
-# plt.figure(figsize=(10,10))
+
 # plt.plot(Ds2,s2,'.-',c='blue',label=r'$s^{*}$ for $\Xi_c$='+str(E))
 # plt.axvline(x=D_bif,c='black',linestyle='--')
 # plt.axhline(y=0.5,c='black',linestyle='--')
-plt.xlabel("D")
-plt.ylabel(r"$\Lambda$")
-plt.xlim(0.1,0.25)
-plt.ylim(0.95,1.05)
-plt.legend(loc =2,prop={'size':5})
-# plt.savefig("bif_lms.png",dpi=500)
+plt.xlabel("D",fontsize=15)
+plt.ylabel(r"$\Lambda$",fontsize=15)
+plt.xlim(0.05,0.3)
+# plt.ylim(0.95,1.05)
+plt.legend(loc=2,fontsize=10)
+plt.tick_params(axis='both', which='major', labelsize=15)
+plt.tick_params(axis='both', which='minor', labelsize=15)
+plt.savefig("bif_lms.png",dpi=500)
 plt.show()    
 
 
@@ -79,6 +82,9 @@ plt.show()
 
 """----------------------- Amplitude ------------------------"""
 
+
+plt.figure(figsize=(7,5))
+
 i=0
 for p in params:
     E, l0_sq = p
@@ -102,14 +108,16 @@ for p in params:
     i+=1
     
 
-plt.plot(Ds2,s2,'.-',c='blue',label=r'$s^{*}$ for $\Xi_c$='+str(E))
-plt.axvline(x=D_bif,c='black',linestyle='--')
-plt.axhline(y=0.5,c='black',linestyle='--')
-plt.xlabel("D")
-plt.ylabel("Buckling amplitude")
+# plt.plot(Ds2,s2,'.-',c='blue',label=r'$s^{*}$ for $\Xi$='+str(E))
+# plt.axvline(x=D_bif,c='black',linestyle='--')
+# plt.axhline(y=0.5,c='black',linestyle='--')
+plt.xlabel("D",fontsize=18)
+plt.ylabel("Buckling amplitude",fontsize=15)
 plt.xlim(-0.1,Ds_f)
-plt.legend(loc=2,prop={'size':5})
-# plt.savefig("bif_amps.png",dpi=500)
+plt.legend(loc=2,fontsize=11)
+plt.tick_params(axis='both', which='major', labelsize=15)
+plt.tick_params(axis='both', which='minor', labelsize=15)
+plt.savefig("bif_amps.png",dpi=500)
 plt.show()
 
 
@@ -157,7 +165,7 @@ plt.ylabel(r"$\psi_{max}$")
 # plt.xlim(0.1,0.25)
 # plt.ylim(0.95,1.05)
 plt.legend(loc =2,prop={'size':5})
-plt.savefig("bif_psi_max.png",dpi=500)
+# plt.savefig("bif_psi_max.png",dpi=500)
 plt.show()   
 
 print("flag=",flag)
