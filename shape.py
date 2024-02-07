@@ -15,11 +15,11 @@ sigma2 = np.linspace(0,1/2,nodes2)
 
 
 #parameters
-E = 15
-l0 = np.sqrt(15)
+E = 100
+l0_sq = 85.4
+l0 = np.sqrt(l0_sq)
 Ds_i = 0
-Ds_f = 0.2
-l1,l2 = 0.995,1.015
+Ds_f = 0.3
 
     
 def solve(y_init):
@@ -364,7 +364,9 @@ plt.plot(Ds2,s_opt2,'.-')
 plt.ylabel(r"$s^*$")
 plt.xlabel("D")
 plt.show()
- 
+
+
+np.save("data/s_E="+str(E)+"_l0^2="+str(l0_sq)+".npy",np.vstack((Ds2,s_opt2)))
     
 plt.plot(Ds,lms_opt,'.-',label=r'below $D_{\Delta}$')
 plt.plot(Ds2,lms_opt2,'.-',label=r'above $D_{\Delta}$')
