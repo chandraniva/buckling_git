@@ -31,7 +31,7 @@ for p in params:
     Di = np.load("data/intsct_E="+str(E)+"_l0^2="+str(l0_sq)+
                  "_tol="+str(tol)+".npy")
     
-    plt.plot(Ds2,lms2,'.-',label=r'$l_0^2=$'+str(l0_sq)+'; $\Xi=$'+str(E),zorder=0)
+    plt.plot(Ds2,lms2-1,'.-',label=r'$l_0^2=$'+str(l0_sq)+'; $\Xi=$'+str(E),zorder=0)
     
     # if Di<Ds_f:
     #     plt.scatter(Di,lms2[np.where(Ds2==Di)[0]],s=50,c='red',zorder=1)

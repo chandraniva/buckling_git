@@ -4,23 +4,17 @@ from datetime import datetime
 
 startTime = datetime.now()
 
-
-
-r = 1.16
-D_bif = 0.2115#1-np.sin(r)/r
+r = 1.1655
+D_bif = 0.2115
+E = 100
+l0 = np.sqrt(85.8)
 xi = 1/100
-
-params = [[10,8.14],[15,12.59],[25,21.42],
-          [100,85.6]]
-
-# for p in params:
-#     E, l0_sq = p
-#     Ds2, s2 = np.load("data/s_E="+str(E)+"_l0^2="+str(l0_sq)+".npy")
+tol=1e-3*3
     
     
 Ds2, s = np.load("data/s_E="+str(100)+"_l0^2="+str(85.8)+".npy")
 delta = np.linspace(0,-1000,100)
-s1 = ((-12*delta*(1/np.sin(r))+np.tan(r))/8/r)**0.5
+s1 = ((-12*delta/np.sin(r)+np.tan(r))/8/r)**0.5
 
 plt.plot(D_bif-Ds2,-s+0.5,'o-')
 plt.plot(-delta*xi**2,s1*xi,label='theory')
@@ -31,5 +25,17 @@ plt.xlabel("D_bif-D")
 plt.ylabel("1/2-s*")
 plt.legend()
 plt.loglog()
-plt.savefig("s_scaling.png",dpi=500)
+# plt.savefig("s_scaling.png",dpi=500)
+plt.show()
 
+
+delta2 = np.linspace(0,1000,10000)
+Ds2, lms = np.load("data/lms_E="+str(E)+"_l0^2="+str(round(l0**2*1000)/1000)+
+        "_tol="+str(tol)+".npy")
+lambda1 = (1/24*(-1-24*delta2*np.cos(r)+np.cos(2*r))/np.cos(2*r))**0.5
+
+plt.plot(-D_bif+Ds2,lms-1,'o-')
+plt.plot(delta2*xi**2,lambda1*xi,label='theory')
+plt.loglog()
+plt.savefig("lambda_scaling.png",dpi=500)
+plt.show()

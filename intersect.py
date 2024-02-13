@@ -17,7 +17,7 @@ stepsigma2 = 0.5/nodes2
 
 #parameters
 E = 100
-l0 = np.sqrt(85.7)
+l0 = np.sqrt(85.8)
 Ds_i = 0
 Ds_f = 0.3
 
@@ -481,7 +481,7 @@ def shape2(psi,dpsi,lamb,mu,s_star,D):
 print("-------------above D_trg------------")
 
 
-Ds2 = np.linspace(D_trg,Ds_f,100)
+Ds2 = np.linspace(D_trg,Ds_f,200)
 mus_opt2 = np.zeros_like(Ds2)
 lms_opt2 = np.zeros_like(Ds2)
 s_opt2 = np.zeros_like(Ds2)

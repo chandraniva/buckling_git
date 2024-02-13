@@ -15,8 +15,8 @@ sigma2 = np.linspace(0,1/2,nodes2)
 
 
 #parameters
-E = 100
-l0_sq = 85.4
+E = 15
+l0_sq = 12.59
 l0 = np.sqrt(l0_sq)
 Ds_i = 0
 Ds_f = 0.3
