@@ -76,27 +76,34 @@ for E in Es:
     i_trg = np.where(abs(Ds1-Ds2[0])==min(abs(Ds1 - Ds2[0])))[0][0]
     
     plt.plot(Ds1[:i_trg],amp1[:i_trg],'.-',color=colors[i],zorder=0)
-    plt.plot(Ds2,amp2,'.-',color=colors[i],zorder=0)
+    
     Di = np.load("data/intsct_E="+str(E)+"_l0^2="+str(round(l0**2*10)/10)+"_tol="+str(tol)+".npy")
+    
+    i_ints = np.where(abs(Ds2-Di) == min(abs(Ds2-Di)))[0][0]
+    
     plt.scatter(Ds2[0],amp2[0],s=50,c='red',zorder=1)
-    if Di<Ds_f and Di>Ds2[0]:
-        plt.scatter(Di,amp2[np.where(Ds2==Di)[0]],s=50,c='cyan',zorder=2)
-    elif Di<Ds2[0]:
-        plt.scatter(Di,amp1[np.where(Ds1==Di)[0]],s=50,c='cyan',zorder=2)
+    
+    # if Di<Ds_f and Di>Ds2[0]:
+    #     plt.scatter(Di,amp2[np.where(Ds2==Di)[0]],s=50,c='cyan',zorder=2)
+    # elif Di<Ds2[0]:
+    #     plt.scatter(Di,amp1[np.where(Ds1==Di)[0]],s=50,c='cyan',zorder=2)
+        
+    plt.plot(Ds2[:i_ints],amp2[:i_ints],'.-',color=colors[i],zorder=0)
     i+=1
     
-colorbar_min = 8
-colorbar_max = 25
+colorbar_min = 8/l0**2
+colorbar_max = 25/l0**2
 sm = plt.cm.ScalarMappable(cmap=plt.cm.viridis, norm=plt.Normalize(vmin=colorbar_min, vmax=colorbar_max))
 sm.set_array([])  # You need to set a dummy array for the scalar mappable
 cbar = plt.colorbar(sm)
+cbar.ax.tick_params(labelsize=17) 
 
 plt.xlabel("D",fontsize=18)
 plt.ylabel("Buckling amplitude",fontsize=15)
-plt.xlim(0,Ds_f)
+plt.xlim(0,0.6)
 # plt.ylim(-0,8)
 plt.legend(loc=2,fontsize=10,ncol=2)
-plt.title(r"$l_0^2 = 10$",fontsize=15)
+# plt.title(r"$l_0^2 = 10$",fontsize=15)
 plt.tick_params(axis='both', which='major', labelsize=15)
 plt.tick_params(axis='both', which='minor', labelsize=15)
 plt.savefig("amps_l0^2="+str(round(l0**2*10)/10)+"_tol="+str(tol)+".png",dpi=500)

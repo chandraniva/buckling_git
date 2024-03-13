@@ -8,7 +8,7 @@ startTime = datetime.now()
 Ds_i = 0
 Ds_f = 0.35
 
-D_bif = 0.213
+D_bif = 0.211
 
 tol = 1e-3*3
 
@@ -96,11 +96,11 @@ for p in params:
     
     i_trg = np.where(abs(Ds1-Ds2[0])==min(abs(Ds1 - Ds2[0])))[0][0]
     
-    plt.plot(Ds1[:i_trg],amp1[:i_trg],'.-',color='C'+str(i),zorder=0)
-    
-    plt.plot(Ds2,amp2,'.-',color='C'+str(i),label=r'$l_0^2=$'+
-             str(l0_sq)+'; $\Xi=$'+str(E),zorder=0)
-    
+    plt.plot(Ds1[:i_trg],amp1[:i_trg],'.-',color='C'+str(int(i/2)),zorder=0)
+    if i%2==0:
+        plt.plot(Ds2,amp2,'.-',color='C'+str(int(i/2)),label=r'$N=$'+str(2*E),zorder=0)
+    else:
+        plt.plot(Ds2,amp2,'.-',color='C'+str(int(i/2)),zorder=0)
     # Di = np.load("data/intsct_E="+str(E)+"_l0^2="+str(round(l0**2*10)/10)+
     #              "_tol="+str(tol)+".npy")
     # if Di<Ds_f:
@@ -109,12 +109,12 @@ for p in params:
     
 
 # plt.plot(Ds2,s2,'.-',c='blue',label=r'$s^{*}$ for $\Xi$='+str(E))
-# plt.axvline(x=D_bif,c='black',linestyle='--')
+plt.axvline(x=D_bif,c='black',linestyle='--')
 # plt.axhline(y=0.5,c='black',linestyle='--')
 plt.xlabel("D",fontsize=18)
 plt.ylabel("Buckling amplitude",fontsize=15)
 plt.xlim(-0.1,Ds_f)
-plt.legend(loc=2,fontsize=11)
+plt.legend(loc=2,fontsize=16)
 plt.tick_params(axis='both', which='major', labelsize=15)
 plt.tick_params(axis='both', which='minor', labelsize=15)
 plt.savefig("bif_amps.png",dpi=500)
@@ -168,7 +168,6 @@ plt.legend(loc =2,prop={'size':5})
 # plt.savefig("bif_psi_max.png",dpi=500)
 plt.show()   
 
-print("flag=",flag)
 
 
 print("Execution time:",datetime.now() - startTime)
